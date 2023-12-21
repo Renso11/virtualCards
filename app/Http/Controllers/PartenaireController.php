@@ -229,7 +229,7 @@ class PartenaireController extends Controller
             
 
             RechargementPartenaire::create([
-                        'id' => Uuid::uuid4()->toString(),
+                'id' => Uuid::uuid4()->toString(),
                 'partenaire_id' => $request->id,
                 'montant' => $request->montant,
                 'user_id' => Auth::user()->id,
@@ -262,7 +262,7 @@ class PartenaireController extends Controller
             
             if(!$partenaire->accountDistribution){
                 AccountDistribution::create([
-                        'id' => Uuid::uuid4()->toString(),
+                    'id' => Uuid::uuid4()->toString(),
                     'solde' => 0,
                     'partenaire_id' => $partenaire->id,
                     'deleted' => 0,
@@ -272,7 +272,7 @@ class PartenaireController extends Controller
             }
 
             AccountDistributionOperation::create([
-                        'id' => Uuid::uuid4()->toString(),
+                'id' => Uuid::uuid4()->toString(),
                 'solde_avant' => $partenaire->accountDistribution->solde,
                 'montant' => $rechargement->montant,
                 'solde_apres' => $partenaire->accountDistribution->solde + $rechargement->montant,

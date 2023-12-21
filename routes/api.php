@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\PartenaireController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,7 +50,7 @@ Route::get('get/retraits/client/{id}', [App\Http\Controllers\Api\ClientControlle
 Route::get('get/retrait/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getRetraitDetailClient'])->name('getRetraitDetailClient');
 Route::get('get/self/retrait/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getSelfRetraitDetailClient'])->name('getSelfRetraitDetailClient');
 Route::post('validation/retrait/client', [App\Http\Controllers\Api\ClientController::class, 'validationRetraitAttenteClient'])->name('validationRetraitAttenteClient');
-/*Pas coder encore*/Route::post('annulation/retrait/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'é&zs'])->name('annulationRetraitAttenteClient');
+/*Pas coder encore*/Route::post('annulation/retrait/client', [App\Http\Controllers\Api\ClientController::class, 'annulationRetraitAttenteClient'])->name('annulationRetraitAttenteClient');
 
 Route::post('add/transfert/client', [App\Http\Controllers\Api\ClientController::class, 'addNewTransfertClient'])->name('addTransfertClient');
 Route::post('complete/transfert/client', [App\Http\Controllers\Api\ClientController::class, 'completeTransfertClient'])->name('completeTransfertClient');
@@ -75,8 +76,6 @@ Route::post('edit/contact/{type}/{id}', [App\Http\Controllers\Api\ClientControll
 Route::get('delete/contact/{type}/{id}', [App\Http\Controllers\Api\ClientController::class, 'deleteContact'])->name('deleteContact');
 Route::get('check/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'checkClient'])->name('checkClient');
 Route::get('check/client/with/username/{username}', [App\Http\Controllers\Api\ClientController::class, 'checkClientUsername'])->name('checkClient');
-
-
 
 /*Route::post('create/vente/virtuelle', [App\Http\Controllers\Api\VenteController::class, 'createVenteVirtuelle'])->name('createVenteVirtuelle');
 Route::post('create/vente/physique', [App\Http\Controllers\Api\VenteController::class, 'createVentePhysique'])->name('createVentePhysique');
@@ -130,7 +129,6 @@ Route::get('get/solde/{id}', [App\Http\Controllers\Api\ClientController::class, 
 Route::get('kkiapay/infos', [App\Http\Controllers\Api\ClientController::class, 'getKkpInfos'])->name('getKkpInfos');
 Route::get('cards/infos', [App\Http\Controllers\Api\ClientController::class, 'getCardsInfos'])->name('getCardsInfos');
 Route::get('get/services', [App\Http\Controllers\Api\ClientController::class, 'getServices'])->name('getServices');
-Route::get('get/fees', [App\Http\Controllers\Api\ClientController::class, 'getFees'])->name('getFees');
 Route::get('get/mobile/wallets', [App\Http\Controllers\Api\ClientController::class, 'getMobileWallet'])->name('getMobileWallet');
 Route::post('set/default/card', [App\Http\Controllers\Api\ClientController::class, 'setDefaultCard'])->name('setDefaultCard');
 
@@ -146,77 +144,87 @@ Route::post('carte/transaction/{code}', [App\Http\Controllers\Api\ClientControll
 
 //Partenaires
 
-Route::post('login/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'loginPartenaire'])->name('loginPartenaire');
-Route::get('get/compte/partenaire/info/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'getComptePartenaireInfo'])->name('getComptePartenaireInfo');
-Route::post('search/client/info', [App\Http\Controllers\Api\PartenaireController::class, 'searchClientInfo'])->name('searchClientInfo');
-Route::get('get/services/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'getServices'])->name('getServices');
-Route::get('get/dashboard/partenaire/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'getDashboardPartenaire'])->name('getDashboardPartenaire');
 
-Route::post('update/user/partenaire/info', [App\Http\Controllers\Api\PartenaireController::class, 'updateUserPartenaireInfo'])->name('updateUserPartenaireInfo');
-Route::post('update/user/partenaire/password', [App\Http\Controllers\Api\PartenaireController::class, 'updateUserPartenairePassword'])->name('updateUserPartenairePassword');
-Route::get('get/user/partenaire/info/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'getUserPartenaireInfo'])->name('getUserPartenaireInfo');
+Route::post('login/partenaire', [PartenaireController::class, 'loginPartenaire'])->name('loginPartenaire');
+Route::get('/get/bcv/client/info/{username}', [App\Http\Controllers\Api\ClientController::class, 'getCompteClientInfo'])->name('getCompteClientInfo');
+Route::get('get/fees', [App\Http\Controllers\Api\ClientController::class, 'getFees'])->name('getFees');
+Route::get('get/services/partenaire', [PartenaireController::class, 'getServices'])->name('getServices');
+Route::get('get/dashboard/partenaire/{id}', [PartenaireController::class, 'getDashboardPartenaire'])->name('getDashboardPartenaire');
 
-Route::post('add/retrait/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'addRetraitPartenaire'])->name('addRetraitPartenaire');
-Route::post('add/depot/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'addDepotPartenaire'])->name('addDepotPartenaire');
-Route::post('search/operation/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'listeOperationPartenaire'])->name('listeOperationPartenaire');
-Route::get('get/partenaire/transactions/all/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'getPartenaireTransactionsAll'])->name('getPartenaireTransactionsAll');
-Route::get('retrait/attentes/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'retraitAttentes'])->name('retraitAttentes');
-Route::get('annule/retrait/attentes/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'annuleRetraitAttentes'])->name('annuleRetraitAttentes');
+Route::post('add/withdraw/partner', [PartenaireController::class, 'addWithdrawPartenaire'])->name('addWithdrawPartenaire');
+Route::post('complete/withdraw/partner', [PartenaireController::class, 'completeWithdrawPartenaire'])->name('completeWithdrawPartenaire');
+Route::post('cancel/client/withdraw/as/partner', [PartenaireController::class, 'cancelClientWithdrawAsPartner'])->name('cancelClientWithdrawAsPartner');
+Route::post('add/depot/partner', [PartenaireController::class, 'addDepotPartenaire'])->name('addDepotPartenaire');
+Route::post('complete/depot/partner', [PartenaireController::class, 'completeDepotPartenaire'])->name('completeDepotPartenaire');
 
-Route::post('search/commission/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'searchCommission'])->name('searchCommission');
-Route::post('search/distribution/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'searchDistribution'])->name('searchDistribution');
+Route::get('get/partner/pending/customers/transactions/{user_partenaire_id}', [PartenaireController::class, 'getPartnerPendingCustomersTransactions'])->name('getPartnerPendingCustomersTransactions');
+Route::get('get/partner/pending/admins/transactions/{user_partenaire_id}', [PartenaireController::class, 'getPartnerPendingAdminsTransactions'])->name('getPartnerPendingAdminsTransactions');
+Route::get('get/partner/all/transactions/{user_partenaire_id}', [PartenaireController::class, 'getPartnerAllTransactions'])->name('getPartnerAllTransactions');
 
-Route::get('compte/commission/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'compteCommission'])->name('compteCommission');
-Route::get('compte/distribution/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'compteDistribution'])->name('compteDistribution');
-Route::post('retrait/commission/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'retraitCommission'])->name('retraitCommission');
-Route::post('retrait/distribution/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'retraitDistribution'])->name('retraitDistribution');
-Route::post('transfert/commission/distribution/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'transfertCommissionDistribution'])->name('transfertCommissionDistribution');
+Route::post('update/user/partenaire/info', [PartenaireController::class, 'updateUserPartenaireInfo'])->name('updateUserPartenaireInfo');
+Route::post('update/user/partenaire/password', [PartenaireController::class, 'updateUserPartenairePassword'])->name('updateUserPartenairePassword');
+Route::get('get/user/partenaire/info/{id}', [PartenaireController::class, 'getUserPartenaireInfo'])->name('getUserPartenaireInfo');
+
+Route::get('get/partner/wallets/{partnerId}', [PartenaireController::class, 'getPartnerWallets'])->name('getPartnerWallets');
+Route::post('add/partner/wallet/{walletType}', [PartenaireController::class, 'addPartnerWallet'])->name('addPartnerWallet');
+Route::post('update/partner/wallet/{walletType}/{walletId}', [PartenaireController::class, 'updatePartnerWallet'])->name('updatePartnerWallet');
+Route::get('delete/partner/wallet/{walletId}', [PartenaireController::class, 'deletePartnerWallet'])->name('deletePartnerWallet');
+
+Route::post('withdraw/partner/to/wallet/{walletId}', [PartenaireController::class, 'withdrawPartnerToWallet'])->name('withdrawPartnerWallet');
+Route::post('complete/withdraw/partner/to/wallet', [PartenaireController::class, 'completeWithdrawPartnerToWallet'])->name('completeWithdrawPartnerWallet');
+Route::post('withdraw/partner/to/distribution/account', [PartenaireController::class, 'withdrawPartnerToDistributionAccount'])->name('withdrawPartnerDistributionAccount');
+Route::post('withdraw/partner/to/atm', [PartenaireController::class, 'withdrawPartnerToAtm'])->name('withdrawPartnerToAtm');
 
 
+Route::post('deposit/partner/from/wallet/{walletId}', [PartenaireController::class, 'compteCommission'])->name('compteCommission');
 
+Route::get('get/compte/commission/{id}', [PartenaireController::class, 'compteCommission'])->name('compteCommission');
+Route::get('get/compte/distribution/{id}', [PartenaireController::class, 'compteDistribution'])->name('compteDistribution');
 
+Route::post('retrait/commission/{id}', [PartenaireController::class, 'retraitCommission'])->name('retraitCommission');
+Route::post('retrait/distribution/{id}', [PartenaireController::class, 'retraitDistribution'])->name('retraitDistribution');
 
+Route::post('config/partner/pin', [App\Http\Controllers\Api\PartenaireController::class, 'configPin'])->name('configPin');
 
+Route::get('liste/retrait/unvalidate/partenaire', [PartenaireController::class, 'listeRetraitUnvalidatePartenaire'])->name('listeRetraitUnvalidatePartenaire');
+Route::get('show/retrait/partenaire/{id}', [PartenaireController::class, 'showRetraitPartenaire'])->name('showRetraitPartenaire');
+Route::post('cancel/retrait/partenaire', [PartenaireController::class, 'cancelRetraitPartenaire'])->name('cancelRetraitPartenaire');
+Route::post('validate/retrait/partenaire', [PartenaireController::class, 'validateRetraitPartenaire'])->name('validateRetraitPartenaire');
 
-Route::get('liste/retrait/unvalidate/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'listeRetraitUnvalidatePartenaire'])->name('listeRetraitUnvalidatePartenaire');
-Route::get('show/retrait/partenaire/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'showRetraitPartenaire'])->name('showRetraitPartenaire');
-Route::post('cancel/retrait/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'cancelRetraitPartenaire'])->name('cancelRetraitPartenaire');
-Route::post('validate/retrait/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'validateRetraitPartenaire'])->name('validateRetraitPartenaire');
+Route::get('liste/depot/partenaire', [PartenaireController::class, 'listeDepotPartenaire'])->name('listeDepotPartenaire');
+Route::get('liste/depot/unvalidate/partenaire', [PartenaireController::class, 'listeDepotUnvalidatePartenaire'])->name('listeDepotUnvalidatePartenaire');
+Route::get('show/depot/partenaire/{id}', [PartenaireController::class, 'showDepotPartenaire'])->name('showDepotPartenaire');
+Route::post('cancel/depot/partenaire', [PartenaireController::class, 'cancelDepotPartenaire'])->name('cancelDepotPartenaire');
+Route::post('validate/depot/partenaire', [PartenaireController::class, 'validateDepotPartenaire'])->name('validateDepotPartenaire');
 
-Route::get('liste/depot/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'listeDepotPartenaire'])->name('listeDepotPartenaire');
-Route::get('liste/depot/unvalidate/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'listeDepotUnvalidatePartenaire'])->name('listeDepotUnvalidatePartenaire');
-Route::get('show/depot/partenaire/{id}', [App\Http\Controllers\Api\PartenaireController::class, 'showDepotPartenaire'])->name('showDepotPartenaire');
-Route::post('cancel/depot/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'cancelDepotPartenaire'])->name('cancelDepotPartenaire');
-Route::post('validate/depot/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'validateDepotPartenaire'])->name('validateDepotPartenaire');
+Route::get('liste/user/partenaire', [PartenaireController::class, 'listeUserPartenaire'])->name('listeUserPartenaire');
+Route::get('show/user/partenaire', [PartenaireController::class, 'showUserPartenaire'])->name('showUserPartenaire');
+Route::post('add/user/partenaire', [PartenaireController::class, 'addUserPartenaire'])->name('addUserPartenaire');
+Route::post('edit/user/partenaire', [PartenaireController::class, 'editUserPartenaire'])->name('editUserPartenaire');
+Route::post('delete/user/partenaire', [PartenaireController::class, 'deleteUserPartenaire'])->name('deleteUserPartenaire');
+Route::post('activation/user/partenaire', [PartenaireController::class, 'activationUserPartenaire'])->name('activationUserPartenaire');
+Route::post('desactivation/user/partenaire', [PartenaireController::class, 'desactivationUserPartenaire'])->name('desactivationUserPartenaire');
+Route::post('reset/user/partenaire', [PartenaireController::class, 'resetUserPartenaire'])->name('resetUserPartenaire');
 
-Route::get('liste/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'listeUserPartenaire'])->name('listeUserPartenaire');
-Route::get('show/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'showUserPartenaire'])->name('showUserPartenaire');
-Route::post('add/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'addUserPartenaire'])->name('addUserPartenaire');
-Route::post('edit/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'editUserPartenaire'])->name('editUserPartenaire');
-Route::post('delete/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'deleteUserPartenaire'])->name('deleteUserPartenaire');
-Route::post('activation/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'activationUserPartenaire'])->name('activationUserPartenaire');
-Route::post('desactivation/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'desactivationUserPartenaire'])->name('desactivationUserPartenaire');
-Route::post('reset/user/partenaire', [App\Http\Controllers\Api\PartenaireController::class, 'resetUserPartenaire'])->name('resetUserPartenaire');
+Route::get('liste/partenaire/seuil', [PartenaireController::class, 'listePartenaireSeuil'])->name('listePartenaireSeuil');
+Route::post('add/partenaire/seuil', [PartenaireController::class, 'addPartenaireSeuil'])->name('addPartenaireSeuil');
+Route::post('edit/partenaire/seuil', [PartenaireController::class, 'editPartenaireSeuil'])->name('editPartenaireSeuil');
+Route::post('delete/partenaire/seuil', [PartenaireController::class, 'deletePartenaireSeuil'])->name('deletePartenaireSeuil');
+Route::post('activation/partenaire/seuil', [PartenaireController::class, 'activationPartenaireSeuil'])->name('activationPartenaireSeuil');
+Route::post('desactivation/partenaire/seuil', [PartenaireController::class, 'desactivationPartenaireSeuil'])->name('desactivationPartenaireSeuil');
 
-Route::get('liste/partenaire/seuil', [App\Http\Controllers\Api\PartenaireController::class, 'listePartenaireSeuil'])->name('listePartenaireSeuil');
-Route::post('add/partenaire/seuil', [App\Http\Controllers\Api\PartenaireController::class, 'addPartenaireSeuil'])->name('addPartenaireSeuil');
-Route::post('edit/partenaire/seuil', [App\Http\Controllers\Api\PartenaireController::class, 'editPartenaireSeuil'])->name('editPartenaireSeuil');
-Route::post('delete/partenaire/seuil', [App\Http\Controllers\Api\PartenaireController::class, 'deletePartenaireSeuil'])->name('deletePartenaireSeuil');
-Route::post('activation/partenaire/seuil', [App\Http\Controllers\Api\PartenaireController::class, 'activationPartenaireSeuil'])->name('activationPartenaireSeuil');
-Route::post('desactivation/partenaire/seuil', [App\Http\Controllers\Api\PartenaireController::class, 'desactivationPartenaireSeuil'])->name('desactivationPartenaireSeuil');
+Route::get('liste/partenaire/limit', [PartenaireController::class, 'listePartenaireLimit'])->name('listePartenaireLimit');
+Route::post('add/partenaire/limit', [PartenaireController::class, 'addPartenaireLimit'])->name('addPartenaireLimit');
+Route::post('edit/partenaire/limit', [PartenaireController::class, 'editPartenaireLimit'])->name('editPartenaireLimit');
+Route::post('delete/partenaire/limit', [PartenaireController::class, 'deletePartenaireLimit'])->name('deletePartenaireLimit');
 
-Route::get('liste/partenaire/limit', [App\Http\Controllers\Api\PartenaireController::class, 'listePartenaireLimit'])->name('listePartenaireLimit');
-Route::post('add/partenaire/limit', [App\Http\Controllers\Api\PartenaireController::class, 'addPartenaireLimit'])->name('addPartenaireLimit');
-Route::post('edit/partenaire/limit', [App\Http\Controllers\Api\PartenaireController::class, 'editPartenaireLimit'])->name('editPartenaireLimit');
-Route::post('delete/partenaire/limit', [App\Http\Controllers\Api\PartenaireController::class, 'deletePartenaireLimit'])->name('deletePartenaireLimit');
+Route::get('role/liste', [PartenaireController::class, 'roleListe'])->name('roleListe');
+Route::get('user/permissions', [PartenaireController::class, 'userPermissions'])->name('userPermissions');
+Route::get('permissions', [PartenaireController::class, 'permissions'])->name('permissions');
 
-Route::get('role/liste', [App\Http\Controllers\Api\PartenaireController::class, 'roleListe'])->name('roleListe');
-Route::get('user/permissions', [App\Http\Controllers\Api\PartenaireController::class, 'userPermissions'])->name('userPermissions');
-Route::get('permissions', [App\Http\Controllers\Api\PartenaireController::class, 'permissions'])->name('permissions');
-
-Route::post('customer/credit/{program_id}', [App\Http\Controllers\Api\PartenaireController::class, 'customerCredit'])->name('customer.credit');
-Route::get('account/balance/{program_id}', [App\Http\Controllers\Api\PartenaireController::class, 'accountBalance'])->name('account.balance');
-Route::get('account/transactions/{program_id}', [App\Http\Controllers\Api\PartenaireController::class, 'accountTransactions'])->name('account.transactions');
+Route::post('customer/credit/{program_id}', [PartenaireController::class, 'customerCredit'])->name('customer.credit');
+Route::get('account/balance/{program_id}', [PartenaireController::class, 'accountBalance'])->name('account.balance');
+Route::get('account/transactions/{program_id}', [PartenaireController::class, 'accountTransactions'])->name('account.transactions');
 
 
 // Utilitaire de validation

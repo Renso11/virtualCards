@@ -16,6 +16,7 @@ class UserPartenaire extends Authenticatable implements JWTSubject
     public function partenaire(){
         return $this->belongsTo('App\Models\Partenaire');
     }
+    
     public function rolePartenaire(){
         return $this->belongsTo('App\Models\RolePartenaire');
     }

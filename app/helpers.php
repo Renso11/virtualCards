@@ -364,18 +364,18 @@ function isRestrictByAdmin($montant,$clientId,$partenaireId = null,$typeOperatio
             
             if($typeOperation == 'depot'){
                 if($item->type_acteur == 'client'){
-                    $operation = Depot::where('user_client_id',$clientId)->where('deleted',0)->where('status',1)->where('validate',1);
+                    $operation = Depot::where('user_client_id',$clientId)->where('deleted',0)->where('status','completed');
                 }else{
-                    $operation = Depot::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
+                    $operation = Depot::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status','completed');
                 }
             }else if($typeOperation == 'retrait'){
                 if($item->type_acteur == 'client'){
-                    $operation = Retrait::where('user_client_id',$clientId)->where('deleted',0)->where('status',1)->where('validate',1);
+                    $operation = Retrait::where('user_client_id',$clientId)->where('deleted',0)->where('status','completed');
                 }else{
-                    $operation = Retrait::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
+                    $operation = Retrait::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status','completed');
                 }
             }else{
-                $operation = TransfertOut::where('user_client_id',$clientId)->where('deleted',0)->where('status',1);
+                $operation = TransfertOut::where('user_client_id',$clientId)->where('deleted',0)->where('status','completed');
             }
 
             if($item->type_restriction == 'nombre'){
@@ -441,9 +441,9 @@ function isRestrictByPartenaire($montant,$partenaireId,$userPartenaireId,$typeOp
             }
 
             if($typeOperation == 'depot'){
-                $operation = Depot::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
+                $operation = Depot::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status','completed');
             }else{
-                $operation = Retrait::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
+                $operation = Retrait::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status','completed');
             }
 
             if($item->type_restriction == 'nombre'){

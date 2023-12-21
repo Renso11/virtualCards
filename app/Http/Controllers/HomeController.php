@@ -51,14 +51,14 @@ class HomeController extends Controller
         $debut = date("Y-m-01 00:00:00");
         $fin = date("Y-m-d H:i:s");
         
-        $totalDepots = count(Depot::where('deleted',0)->where('status',1)->where('validate',1)->get());
-        $totalRetraits = count(Retrait::where('deleted',0)->where('status',1)->where('validate',1)->get());
+        $totalDepots = count(Depot::where('deleted',0)->where('status','completed')->get());
+        $totalRetraits = count(Retrait::where('deleted',0)->where('status','completed')->get());
 
         $nbClients = count(UserClient::where('deleted',0)->where('status',1)->get());
         $nbPartenaires = count(UserPartenaire::where('deleted',0)->where('status',1)->get());
 
-        $lastDepots = Depot::where('deleted',0)->where('status',1)->where('validate',1)->limit(5)->get();
-        $lastRetraits = Retrait::where('deleted',0)->where('status',1)->where('validate',1)->limit(5)->get();
+        $lastDepots = Depot::where('deleted',0)->where('status','completed')->limit(5)->get();
+        $lastRetraits = Retrait::where('deleted',0)->where('status','completed')->limit(5)->get();
 
         $balance = 0;
 
@@ -104,9 +104,9 @@ class HomeController extends Controller
         for ($i = 0; $i < 6; $i++) {
             $debut = date("Y-m-01 00:00:00", strtotime("-$i month"));
             $fin = date("Y-m-t 23:59:59", strtotime("-$i month"));
-            $nbrDepots = count(Depot::where('deleted',0)->where('status',1)->where('validate',1)->whereBetween('created_at', [$debut, $fin])->get());
-            $nbrRetraits = count(Retrait::where('deleted',0)->where('status',1)->where('validate',1)->whereBetween('created_at', [$debut, $fin])->get());
-            $nbrTransferts = count(TransfertOut::where('deleted',0)->where('status',1)->whereBetween('created_at', [$debut, $fin])->get());
+            $nbrDepots = count(Depot::where('deleted',0)->where('status','completed')->whereBetween('created_at', [$debut, $fin])->get());
+            $nbrRetraits = count(Retrait::where('deleted',0)->where('status','completed')->whereBetween('created_at', [$debut, $fin])->get());
+            $nbrTransferts = count(TransfertOut::where('deleted',0)->where('status','completed')->whereBetween('created_at', [$debut, $fin])->get());
             $months[$i] = date('M', strtotime("-$i month"));
             $depots[$i] = $nbrDepots;
             $retraits[$i] = $nbrRetraits;
@@ -129,16 +129,52 @@ class HomeController extends Controller
         return json_encode($data);
     }
 
-    public function test(){
-        $users = UserClient::where('deleted',0)->get();
+    public function test(){$client = new Client();
+        $base_url = env('BASE_GTP_API');
+        $programID = env('PROGRAM_ID');
+        $authLogin = env('AUTH_LOGIN');
+        $authPass = env('AUTH_PASS');
+        $accountId = env('AUTH_DISTRIBUTION_ACCOUNT');
+        $url = $base_url."accounts/13173334/transactions";
         
-        foreach($users as $user){
-            //if($user->user_cards->get()){
-                foreach($user->userCards as $item){
-                    $item->is_first = 0;
-                    $item->save();
-                }
-            //}
+        $body = [
+            "transferType" => "WalletToCard",
+            "transferAmount" => 150000,
+            "currencyCode" => "XOF",
+            "referenceMemo" => "Depot de 200000 XOF sur votre carte avec des frais de 0",
+            "last4Digits" => 3229
+        ];
+
+        $body = json_encode($body);
+        
+        $requestId = GtpRequest::create([
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+        
+        $headers = [
+            'programId' => 66,
+            'requestId' => time(),
+            'Content-Type' => 'application/json', 'Accept' => 'application/json'
+        ];
+    
+        $auth = [
+            $authLogin,
+            $authPass
+        ];
+
+        try {
+            $response = $client->request('POST', $url, [
+                'auth' => $auth,
+                'headers' => $headers,
+                'body' => $body,
+                'verify'  => false,
+            ]);
+        
+            $responseBody = json_decode($response->getBody());
+            dd('ok');
+        } catch (BadResponseException $e) {
+            dd($e);
         }
     }
 }

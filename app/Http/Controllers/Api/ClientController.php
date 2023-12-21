@@ -83,6 +83,40 @@ class ClientController extends Controller
         }
     }
 
+    public function getCompteClientInfo(Request $request){
+        try {            
+            $encrypt_Key = env('ENCRYPT_KEY');
+            $client = UserClient::where('deleted',0)->where('username',$request->username)->first();
+
+            
+
+            if(!$client){
+                return $this->sendError('Ce compte client n\'exite pas. Verifiez le numero de telephone et recommencez');
+            }else{
+                if($client->status == 0){
+                    return $this->sendError('Ce compte client est inactif');
+                }
+                if($client->verification == 0){
+                    return $this->sendError('Ce compte client n\'est pas encore verifié');
+                }
+            }
+
+            $data = [
+                'name' => $client->name,
+                'lastname' => $client->lastname,
+                'main_card_balance' => encryptData((string)getCarteInformation((string)$client->userCard->first()->customer_id, 'balance'),$encrypt_Key),
+                'main_card_last_digits' => $client->userCard->first()->last_digits,
+                'is_active' => $client->status,
+                'is_valid' => $client->verification,
+            ];
+
+
+            return $this->sendResponse($data, 'Info.');
+        } catch (\Exception $e) {
+            return $this->sendError($e->getMessage(), [], 500);
+        }
+    }
+
     public function getServices(Request $request){
         try {            
             $modules = Service::where('deleted',0)->where('type','client')->get();
@@ -622,7 +656,6 @@ class ClientController extends Controller
             From depots
             Where user_client_id = "."'$request->id'"."
             and status = 'completed'
-            and validate = 1
         Union
             select recharges.id as 'id_operation', 'Rechargement de compte' as libelle , montant , 'recharge' as type_operation , created_at
             From recharges
@@ -633,7 +666,6 @@ class ClientController extends Controller
             From retraits
             Where user_client_id = "."'$request->id'"."
             and status = 'completed'
-            and validate = 1
         Union
             select self_retraits.id as 'id_operation', 'Retrait sur le numero lié' as libelle , montant , 'self_retrait' as type_operation , created_at
             From self_retraits
@@ -713,7 +745,6 @@ class ClientController extends Controller
             From depots
             Where user_client_id = "."'$request->id'"."
             and status = 'completed'
-            and validate = 1
         Union
             select recharges.id as 'id_operation', 'Rechargement de compte' as libelle , montant , 'recharge' as type_operation , created_at
             From recharges
@@ -724,7 +755,6 @@ class ClientController extends Controller
             From retraits
             Where user_client_id = "."'$request->id'"."
             and status = 'completed'
-            and validate = 1
         Union
             select self_retraits.id as 'id_operation', 'Retrait sur le numero lié' as libelle , montant , 'self_retrait' as type_operation , created_at
             From self_retraits
@@ -881,6 +911,7 @@ class ClientController extends Controller
             $authLogin = env('AUTH_LOGIN');
             $authPass = env('AUTH_PASS');
             $accountId = env('AUTH_DISTRIBUTION_ACCOUNT');
+            
             $validator = Validator::make($request->all(), [
                 'user_id' => 'required',
                 'montant' => 'required',
@@ -990,7 +1021,7 @@ class ClientController extends Controller
                 EntityAccountCommissionOperation::insert([
                     [
                         'id' => Uuid::uuid4()->toString(),
-                        'entity_account_distribution_id'=> $compteUba->id,
+                        'entity_account_commission_id'=> $compteUba->id,
                         'type_operation'=>'rechargement',
                         'montant'=> $montant,
                         'frais'=> $frais,
@@ -1004,7 +1035,7 @@ class ClientController extends Controller
                     ],
                     [
                         'id' => Uuid::uuid4()->toString(),
-                        'entity_account_distribution_id'=> $compteElg->id,
+                        'entity_account_commission_id'=> $compteElg->id,
                         'type_operation'=>'rechargement',
                         'montant'=> $montant,
                         'frais'=> $frais,
@@ -1231,7 +1262,7 @@ class ClientController extends Controller
                             EntityAccountCommissionOperation::insert([
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteUba->id,
+                                    'entity_account_commission_id'=> $compteUba->id,
                                     'type_operation'=>'rechargement',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -1245,7 +1276,7 @@ class ClientController extends Controller
                                 ],
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteElg->id,
+                                    'entity_account_commission_id'=> $compteElg->id,
                                     'type_operation'=>'rechargement',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -1264,6 +1295,7 @@ class ClientController extends Controller
                         }
 
                     // Fin repartition des frais
+                    $recharge->save();
 
                 } catch (BadResponseException $e) {
                     $json = json_decode($e->getResponse()->getBody()->getContents());
@@ -1440,7 +1472,7 @@ class ClientController extends Controller
                             EntityAccountCommissionOperation::insert([
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteUba->id,
+                                    'entity_account_commission_id'=> $compteUba->id,
                                     'type_operation'=>'rechargement',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -1454,7 +1486,7 @@ class ClientController extends Controller
                                 ],
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteElg->id,
+                                    'entity_account_commission_id'=> $compteElg->id,
                                     'type_operation'=>'rechargement',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -1489,7 +1521,7 @@ class ClientController extends Controller
 
     public function getDepotsClient(Request $request){
         try {
-            $depots = Depot::where('user_client_id',$request->id)->where('deleted',0)->orderBy('created_at','desc')->where('validate',1)->get();
+            $depots = Depot::where('user_client_id',$request->id)->where('deleted',0)->orderBy('created_at','desc')->get();
             $recharges = Recharge::where('user_client_id',$request->id)->where('deleted',0)->orderBy('created_at','desc')->get();
 
             $data = $dataDepots = $dataRecharges = [];
@@ -1666,7 +1698,7 @@ class ClientController extends Controller
                         EntityAccountCommissionOperation::insert([
                             [
                                 'id' => Uuid::uuid4()->toString(),
-                                'entity_account_distribution_id'=> $compteUba->id,
+                                'entity_account_commission_id'=> $compteUba->id,
                                 'type_operation'=>'self_retrait',
                                 'montant'=> $montant,
                                 'frais'=> $frais,
@@ -1680,7 +1712,7 @@ class ClientController extends Controller
                             ],
                             [
                                 'id' => Uuid::uuid4()->toString(),
-                                'entity_account_distribution_id'=> $compteElg->id,
+                                'entity_account_commission_id'=> $compteElg->id,
                                 'type_operation'=>'self_retrait',
                                 'montant'=> $montant,
                                 'frais'=> $frais,
@@ -1958,7 +1990,7 @@ class ClientController extends Controller
                             EntityAccountCommissionOperation::insert([
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteUba->id,
+                                    'entity_account_commission_id'=> $compteUba->id,
                                     'type_operation'=>'self_retrait',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -1972,7 +2004,7 @@ class ClientController extends Controller
                                 ],
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteElg->id,
+                                    'entity_account_commission_id'=> $compteElg->id,
                                     'type_operation'=>'self_retrait',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -1989,6 +2021,7 @@ class ClientController extends Controller
                             $compteUba->solde += $commissionBank;
                             $compteUba->save();
                         }
+                        
                     // Fin repartition des frais
                         
                     // Rechargement du compte de l'utilisateur
@@ -2239,7 +2272,7 @@ class ClientController extends Controller
                             EntityAccountCommissionOperation::insert([
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteUba->id,
+                                    'entity_account_commission_id'=> $compteUba->id,
                                     'type_operation'=>'self_retrait',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -2253,7 +2286,7 @@ class ClientController extends Controller
                                 ],
                                 [
                                     'id' => Uuid::uuid4()->toString(),
-                                    'entity_account_distribution_id'=> $compteElg->id,
+                                    'entity_account_commission_id'=> $compteElg->id,
                                     'type_operation'=>'self_retrait',
                                     'montant'=> $montant,
                                     'frais'=> $frais,
@@ -2407,8 +2440,8 @@ class ClientController extends Controller
 
     public function getRetraitsClient(Request $request){
         try {
-            $retraitsAttentes = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',0)->orderBy('created_at','desc')->where('validate',1)->get();
-            $retraitsFinalises = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->orderBy('created_at','desc')->where('validate',1)->get();
+            $retraitsAttentes = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',0)->orderBy('created_at','desc')->get();
+            $retraitsFinalises = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->orderBy('created_at','desc')->get();
             $selfRetraits = SelfRetrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->orderBy('created_at','desc')->get();
             
             $data = $dataAttentes = $dataFinalises= $dataSelfs = [];
@@ -2489,8 +2522,24 @@ class ClientController extends Controller
     public function validationRetraitAttenteClient(Request $request){
         try {
             $encrypt_Key = env('ENCRYPT_KEY');
+                
+            $validator = Validator::make($request->all(), [
+                'user_card_id' => 'required',
+                'transaction_id' => 'required'
+            ]);
+            if ($validator->fails()) {
+                return  $this->sendError($validator->errors()->first(), [],422);
+            }
+
+            $token = JWTAuth::getToken();
+            $userId = JWTAuth::getPayload($token)->toArray()['sub'];
+
       
-            $retrait = Retrait::where('id',$request->id)->where('deleted',0)->where('status',0)->first();
+            $retrait = Retrait::where('id',$request->transaction_id)->where('deleted',0)->where('status',0)->first();
+            
+            if($userId != $retrait->user_client_id){
+                return  $this->sendError('Vous n\'etes pas autorisé à faire cette opération', [$userId,$retrait->user_client_id],401);
+            }
 
             $base_url = env('BASE_GTP_API');
             $programID = env('PROGRAM_ID');
@@ -2568,7 +2617,7 @@ class ClientController extends Controller
                 $distribution_account = AccountDistribution::where('partenaire_id',$retrait->userPartenaire->partenaire->id)->where('deleted',0)->first();
 
                 AccountDistributionOperation::create([
-                        'id' => Uuid::uuid4()->toString(),
+                    'id' => Uuid::uuid4()->toString(),
                     'solde_avant' => $distribution_account->solde,
                     'montant' => $retrait->montant,
                     'solde_apres' => $distribution_account->solde + $retrait->montant,
@@ -2581,7 +2630,7 @@ class ClientController extends Controller
                 ]);
                 $distribution_account->solde += $montant_recu;
                 $distribution_account->save();    
-
+            // 
             //Incrémentation du compte commission    
                 if($commission > 0){
                     $commission_account = AccountCommission::where('partenaire_id',$retrait->userPartenaire->partenaire->id)->where('deleted',0)->first();
@@ -2602,15 +2651,15 @@ class ClientController extends Controller
                     $commission_account->solde += $commission;
                     $commission_account->save();                        
                 }
+            //
 
             //finalisation du retrait
-                $retrait->status = 1;
+                $retrait->status = 'completed';
                 $retrait->solde_avant = $soldeAvantRetrait;
                 $retrait->solde_apres = $soldeApresRetrait;
                 
                 $retrait->reference_gtp = $responseAfterRetrait->transactionId;
                 $retrait->montant_recu = $montant_recu;
-                $retrait->validate_time = Carbon::now();
                 $retrait->save();
             
             $message = 'Vous avez validé un retrait de '.$retrait->montant.' XOF sur votre carte '.$clientCode.'. Partenaire : '.$retrait->partenaire->libelle.'. Frais d\'operation : '.$retrait->frais.' XOF. Montant reçu :'.$montant_recu.' Votre nouveau solde est :'.$soldeApresRetrait.' XOF.';
@@ -2626,6 +2675,37 @@ class ClientController extends Controller
             $this->sendSms($retrait->userPartenaire->partenaire->telephone,$message);
             
             return $this->sendResponse($retrait, 'Votre opération de retrait a été confirmé avec succès');
+        } catch (\Exception $e) {
+            return $this->sendError($e->getMessage(), [], 500);
+        };
+    }
+    
+    public function annulationRetraitAttenteClient(Request $request){
+        try {
+            $encrypt_Key = env('ENCRYPT_KEY');
+                
+            $validator = Validator::make($request->all(), [
+                'transaction_id' => 'required'
+            ]);
+            if ($validator->fails()) {
+                return  $this->sendError($validator->errors()->first(), [],422);
+            }
+
+            $token = JWTAuth::getToken();
+            $userId = JWTAuth::getPayload($token)->toArray()['sub'];
+
+      
+            $retrait = Retrait::where('id',$request->transaction_id)->where('deleted',0)->where('status','pending')->first();
+            
+            if($userId != $retrait->user_client_id){
+                return  $this->sendError('Vous n\'etes pas autorisé à faire cette opération', [$userId,$retrait->user_client_id],401);
+            }
+
+            $retrait->status = 'canceled';
+            $retrait->deleted = 1;
+            $retrait->save();
+            
+            return $this->sendResponse($retrait, 'Succès');
         } catch (\Exception $e) {
             return $this->sendError($e->getMessage(), [], 500);
         };
@@ -2665,7 +2745,7 @@ class ClientController extends Controller
             }
 
             $beneficiary = Beneficiaire::create([
-                        'id' => Uuid::uuid4()->toString(),
+                'id' => Uuid::uuid4()->toString(),
                 "user_client_id" => $request->user_id,
                 "name" => $request->name,
                 "deleted" => 0,
@@ -2693,8 +2773,6 @@ class ClientController extends Controller
                         'id' => Uuid::uuid4()->toString(),
                         "beneficiaire_id" => $beneficiary->id,
                         "user_client_id" => $client->id,
-                        "customer_id" => $contact['customer_id'],
-                        "last_digits" => $contact['last_digits'],
                         "deleted" => 0,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now()
@@ -2781,8 +2859,6 @@ class ClientController extends Controller
                         'id' => Uuid::uuid4()->toString(),
                         "beneficiaire_id" => $beneficiary->id,
                         "user_client_id" => $client->id,
-                        "customer_id" => $contact['customer_id'],
-                        "last_digits" => $contact['last_digits'],
                         "deleted" => 0,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now()
@@ -2860,8 +2936,6 @@ class ClientController extends Controller
                 }
                 $client = UserClient::where('username',$request->username)->first();
                 $contact->user_client_id = $client->id;
-                $contact->customer_id = $request->customer_id;
-                $contact->last_digits = $request->customer_id;
                 $contact->save();
             }else if($request->type == 'visa'){
                 $contact = BeneficiaireCard::where('id',$request->id)->first();
@@ -3736,6 +3810,7 @@ class ClientController extends Controller
                             "reason" => 'Transfert de '.$request->montant.' provenant de '.$sender->username.' effectué depuis son compte BCB Virtuelle. ID de la carte : '.$sender->customer_id.'.',
                             "partnerId" => $partner_reference
                         ];
+
 
 
                         $body = json_encode($body);
@@ -4747,8 +4822,8 @@ class ClientController extends Controller
 
     public function listeDepotClient(Request $request){
         try {
-            $depots = Depot::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->where('validate',1)->orderBy('created_at','desc')->get();
-            $depotAttentes = Depot::where('user_client_id',$request->id)->where('deleted',0)->where('status',0)->where('validate',1)->orderBy('created_at','desc')->get();
+            $depots = Depot::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->orderBy('created_at','desc')->get();
+            $depotAttentes = Depot::where('user_client_id',$request->id)->where('deleted',0)->where('status',0)->orderBy('created_at','desc')->get();
             
             $data['depots'] = $depots;
             $data['depotAttentes'] = $depotAttentes;
@@ -4760,121 +4835,12 @@ class ClientController extends Controller
 
     public function listeRetraitClient(Request $request){
         try {
-            $retraits = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->where('validate',1)->orderBy('created_at','desc')->get();
-            $retraitAttentes = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',0)->orderBy('created_at','desc')->where('validate',1)->get();
+            $retraits = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',1)->orderBy('created_at','desc')->get();
+            $retraitAttentes = Retrait::where('user_client_id',$request->id)->where('deleted',0)->where('status',0)->orderBy('created_at','desc')->get();
 
             $data['retraits'] = $retraits;
             $data['retraitAttentes'] = $retraitAttentes;
             return $this->sendResponse($data, 'Success');
-        } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
-        };
-    }
-
-    public function listeOperationClient(Request $request){
-        try {
-            $transactions = DB::select(DB::raw("SELECT id_op, libelle , montant , typeOperation , dateOperation , partenaire , sens , emetteur
-            FROM
-            (
-                select depots.id as 'id_op', libelle , montant , 'depot' as typeOperation , created_at as dateOperation , partenaire_id as partenaire, 'recu' as sens, 'neant' as emetteur
-                From depots
-                Where user_client_id = "."'$request->id'"."
-                and status = 1
-                and validate = 1
-            Union
-                select retraits.id as 'id_op', libelle , montant , 'retrait' as typeOperation , created_at as dateOperation , partenaire_id as partenaire, 'envoie' as sens, 'neant' as emetteur
-                From retraits
-                Where user_client_id = "."'$request->id'"."
-                and status = 1
-                and validate = 1
-            Union
-                SELECT *
-                    FROM
-                    (
-                            select transferts.id as 'id_op', libelle , montant , 'transfert' as typeOperation , transferts.created_at as dateOperation , user_client_id as partenaire , 'recu' as 'sens', CONCAT(user_clients.name,' ',user_clients.lastname) as emetteur 
-                            From transferts, user_clients
-                            Where receveur_id = "."'$request->id'"."
-                            and user_clients.id = transferts.user_client_id
-                            and transferts.status = 1
-                        Union
-                            select transferts.id as 'id_op', libelle , montant , 'transfert' as typeOperation , created_at as dateOperation , receveur_id as partenaire , 'envoie' as 'sens', 'neant' as emetteur
-                            From transferts
-                            Where user_client_id = "."'$request->id'"."
-                            and status = 1
-                    ) 
-                transferts
-            ) transactions order by dateOperation desc"));
-
-            $data = [];
-            foreach ($transactions as $key => $value) {
-                $value->id = $key + 1;
-                $data[] = $value;
-            }
-            return $this->sendResponse($data, 'Success');
-            
-        } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
-        };
-    }
-
-    public function listeOperationPeriodeClient(Request $request){  
-        try {
-            $validator = Validator::make($request->all(), [
-                'debut' => 'required',
-                'fin' => 'required'
-            ]);
-            if ($validator->fails()) {
-                return  $this->sendError($validator->errors()->first(), [],422);
-            }
-            
-            $debut = date("Y-m-d", strtotime($request->debut));
-            $debut = $debut.' 00:00:00';
-            $fin = date("Y-m-d", strtotime($request->fin));
-            $fin = $fin.' 23:59:59';
-
-            $transactions = DB::select(DB::raw("SELECT id_op, libelle , montant , typeOperation , dateOperation , partenaire , sens , emetteur
-            FROM
-            (
-                select depots.id as 'id_op', libelle , montant , 'depot' as typeOperation , created_at as dateOperation , partenaire_id as partenaire, 'recu' as sens, 'neant' as emetteur
-                From depots
-                Where user_client_id = "."'$request->id'"."
-                and status = 1
-                and created_at between '$debut' and '$fin'
-                and validate = 1
-            Union
-                select retraits.id as 'id_op', libelle , montant , 'retrait' as typeOperation , created_at as dateOperation , partenaire_id as partenaire, 'envoie' as sens, 'neant' as emetteur
-                From retraits
-                Where user_client_id = "."'$request->id'"."
-                and status = 1
-                and created_at between '$debut' and '$fin'
-                and validate = 1
-            Union
-                SELECT *
-                    FROM
-                    (
-                        select transferts.id as 'id_op', libelle , montant , 'transfert' as typeOperation , transferts.created_at as dateOperation , user_client_id as partenaire , 'recu' as 'sens', CONCAT(user_clients.name,' ',user_clients.lastname) as emetteur 
-                        From transferts, user_clients
-                        Where receveur_id = "."'$request->id'"."
-                        and user_clients.id = transferts.user_client_id
-                        and transferts.created_at between '$debut' and '$fin'
-                        and transferts.status = 1
-                    Union
-                        select transferts.id as 'id_op', libelle , montant , 'transfert' as typeOperation , created_at as dateOperation , receveur_id as partenaire , 'envoie' as 'sens', 'neant' as emetteur
-                        From transferts
-                        Where user_client_id = "."'$request->id'"."
-                        and transferts.created_at between '$debut' and '$fin'
-                        and status = 1
-                    ) 
-                transferts
-            ) transactions order by dateOperation desc"));
-            
-            $data = [];
-            foreach ($transactions as $key => $value) {
-                $value->id = $key + 1;
-                $data[] = $value;
-            }
-            return $this->sendResponse($data, 'Success');
-            
         } catch (\Exception $e) {
             return $this->sendError($e->getMessage(), [], 500);
         };
@@ -5008,14 +4974,12 @@ class ClientController extends Controller
                 Where user_client_id = $request->user_id
                 and created_at between '$debut' and '$fin'
                 and status = 1
-                and validate = 1
             Union
                 select libelle , montant , 'retrait' as typeOperation , created_at as dateOperation , partenaire_id as partenaire , solde_avant , solde_apres , 'solde_avant_receveur' , 'solde_apres_receveur' , user_client_id , 'receveur_id'
                 From retraits
                 Where user_client_id = $request->user_id
                 and created_at between '$debut' and '$fin'
                 and status = 1
-                and validate = 1
             Union
                 select libelle , montant , 'transfert' as typeOperation , created_at as dateOperation , receveur_id as partenaire , solde_avant_envoyeur as 'solde_avant' , solde_apres_envoyeur as 'solde_apres' , solde_avant_receveur , solde_apres_receveur , user_client_id , receveur_id
                 From transferts
@@ -6091,13 +6055,11 @@ class ClientController extends Controller
                 From depots
                 Where user_client_id = "."'$user->id'"."
                 and status = 1
-                and validate = 1
             Union
                 select retraits.id as id_op, libelle , montant , 'retrait' as typeOperation , created_at as dateOperation , partenaire_id as partenaire, 'envoie' as sens, 'neant' as emetteur
                 From retraits
                 Where user_client_id = "."'$user->id'"."
                 and status = 1
-                and validate = 1
             Union
                 SELECT *
                     FROM
