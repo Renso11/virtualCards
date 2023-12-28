@@ -5,26 +5,27 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use Ramsey\Uuid\Uuid;
+use App\Models\Info;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
 class AppController extends Controller
 {
-
-    public function modulesClients(Request $request){
+    public function appClient(Request $request){
         try {
-            $services = Service::where('deleted',0)->get();
-            return view('appParams.clients.modules',compact('services'));
+            $info_card = Info::where('deleted',0)->first();
+            $services = Service::where('deleted',0)->where('type','client')->get();
+            return view('app.client',compact('info_card','services'));
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         };
     }
 
-    public function modulesClientsAdd(Request $request){
+    public function serviceClientAdd(Request $request){
         try {
             Service::create([
                 'id' => Uuid::uuid4()->toString(),
-                'type' => $request->type,
+                'type' => 'client',
                 'slug' => Str::slug($request->libelle , "-"),
                 'status' => 1,
                 'deleted' => 0,
@@ -37,7 +38,59 @@ class AppController extends Controller
         }
     }
 
-    public function modulesClientsDelete(Request $request){
+    public function cardInfosUpdate(Request $request){
+        try {
+            $info_card = Info::where('deleted',0)->first();
+
+            if(!$info_card){
+                Info::create([
+                    'id' => Uuid::uuid4()->toString(),
+                    'card_max' => $request->nb_card,
+                    'card_price' => $request->pu_card,
+                    'deleted' => 0,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
+            }else{
+                $info_card->card_max = $request->nb_card;
+                $info_card->card_price = $request->pu_card;
+                $info_card->save();
+            }
+            return back()->withSuccess('Informations modifiées avec succes');
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        };
+    }
+
+
+    public function appPartenaire(Request $request){
+        try {
+            $services = Service::where('deleted',0)->where('type','partenaire')->get();
+            return view('app.partenaire',compact('services'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        };
+    }
+    
+    public function servicePartenaireAdd(Request $request){
+        try {
+            Service::create([
+                'id' => Uuid::uuid4()->toString(),
+                'type' => 'partenaire',
+                'slug' => Str::slug($request->libelle , "-"),
+                'status' => 1,
+                'deleted' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+            return back()->withSuccess('Module ajouté avec success');
+        } catch (\Exception $e) {
+            return  back()->withError($e->getMessage());
+        }
+    }
+
+
+    public function serviceDelete(Request $request){
         try {
             $service = Service::where('id',$request->id)->where('deleted',0)->first();
             $service->deleted = 1;
@@ -49,7 +102,7 @@ class AppController extends Controller
         };
     }
 
-    public function modulesClientsActivate(Request $request){
+    public function serviceActivate(Request $request){
         try {
             $service = Service::where('id',$request->id)->where('deleted',0)->first();
             $service->status = 1;
@@ -61,7 +114,7 @@ class AppController extends Controller
         };
     }
 
-    public function modulesClientsDesactivate(Request $request){
+    public function serviceDesactivate(Request $request){
         try {
             $service = Service::where('id',$request->id)->where('deleted',0)->first();
             $service->status = 0;

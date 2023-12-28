@@ -189,18 +189,16 @@ class PartenaireController extends Controller
             $programID = env('PROGRAM_ID');
             $authLogin = env('AUTH_LOGIN');
             $authPass = env('AUTH_PASS');
+            $distributionAccount = env('AUTH_DISTRIBUTION_ACCOUNT');
+
             try {
-                $requestId = GtpRequest::create([
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
 
                 $client = new Client();
-                $url = $base_url."accounts/17225124/balance";
+                $url = $base_url."accounts/".$distributionAccount."/balance";
         
                 $headers = [
                     'programId' => $programID,
-                    'requestId' => $requestId->id
+                    'requestId' => Uuid::uuid4()->toString(),
                 ];
         
                 $auth = [
@@ -262,7 +260,7 @@ class PartenaireController extends Controller
             
             if(!$partenaire->accountDistribution){
                 AccountDistribution::create([
-                    'id' => Uuid::uuid4()->toString(),
+                        'id' => Uuid::uuid4()->toString(),
                     'solde' => 0,
                     'partenaire_id' => $partenaire->id,
                     'deleted' => 0,
@@ -272,7 +270,7 @@ class PartenaireController extends Controller
             }
 
             AccountDistributionOperation::create([
-                'id' => Uuid::uuid4()->toString(),
+                        'id' => Uuid::uuid4()->toString(),
                 'solde_avant' => $partenaire->accountDistribution->solde,
                 'montant' => $rechargement->montant,
                 'solde_apres' => $partenaire->accountDistribution->solde + $rechargement->montant,
@@ -361,6 +359,83 @@ class PartenaireController extends Controller
             $vente->status = 1;
             $vente->save();
             return back()->withSuccess("Vente effectuée avec succès");
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+    
+
+    public function partenaireOperationsAttentes(Request $request)
+    {
+        try{
+            
+            $depots = Depot::where('status','pending')->where('deleted',0)->get();
+            foreach($depots as $depot){
+                $depot->date = $depot->created_at->format('d-m-Y');
+                $depot->type = 'Depot';
+                $depot->partenaire = $depot->partenaire;
+                $depot->userClient = $depot->userClient;
+            }
+
+            $retraits = Retrait::where('status','pending')->where('deleted',0)->get();
+            foreach($retraits as $retrait){
+                $retrait->date = $retrait->created_at->format('d-m-Y');
+                $retrait->type = 'Retrait';
+                $retrait->partenaire = $retrait->partenaire;
+                $retrait->userClient = $retrait->userClient;
+            }
+            
+            $transactions = array_merge($depots->toArray(), $retraits->toArray());
+            
+        
+            array_multisort(
+                array_map(
+                    static function ($element) {
+                        return $element['created_at'];
+                    },
+                    $transactions
+                ),
+                SORT_DESC,
+                $transactions
+            );
+            return view('partenaires.operations.attentes',compact('transactions'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
+    public function partenaireOperationsFinalises(Request $request)
+    {
+        try{            
+            $depots = Depot::where('status','completed')->where('deleted',0)->get();
+            foreach($depots as $depot){
+                $depot->date = $depot->created_at->format('d-m-Y');
+                $depot->type = 'Depot';
+                $depot->partenaire = $depot->partenaire;
+                $depot->userClient = $depot->userClient;
+            }
+
+            $retraits = Retrait::where('status','completed')->where('deleted',0)->get();
+            foreach($retraits as $retrait){
+                $retrait->date = $retrait->created_at->format('d-m-Y');
+                $retrait->type = 'Retrait';
+                $retrait->partenaire = $retrait->partenaire;
+                $retrait->userClient = $retrait->userClient;
+            }
+            
+            $transactions = array_merge($depots->toArray(), $retraits->toArray());
+            
+            array_multisort(
+                array_map(
+                    static function ($element) {
+                        return $element['created_at'];
+                    },
+                    $transactions
+                ),
+                SORT_DESC,
+                $transactions
+            );
+            return view('partenaires.operations.finalises',compact('transactions'));
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         }

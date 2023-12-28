@@ -2,19 +2,63 @@
 use App\Models\Permission;
 use App\Models\Restriction;
 use App\Models\Depot;
-use App\Models\GtpRequest;
-use App\Models\Seuil;
-use App\Models\Limit;
 use App\Models\Frai;
 use App\Models\Retrait;
-use App\Models\Transfert;
 use App\Models\RestrictionAgence;
 use App\Models\TransfertOut;
 use App\Models\UserClient;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
-use Illuminate\Support\Carbon;
 use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Facades\Auth as Auth;
+use Illuminate\Support\Carbon;
+
+function sendResponse($data, $message){
+  $response = [
+        'success' => true,
+        'data'    => $data,
+        'message' => $message,
+    ];
+
+    return response()->json($response, 200);
+}
+
+function sendError($message, $data = [], $code = 404){
+  $response = [
+        'success' => false,
+        'errors' => $message,
+    ];
+
+
+    if(!empty($data)){
+        $response['data'] = $data;
+    }
+    return response()->json($response, $code);
+}
+    
+function sendSms($receiver, $message){
+    /*$basic  = new \Nexmo\Client\Credentials\Basic(env("NEXMO_KEY"), env("NEXMO_SECRET"));
+    $clientSms = new \Nexmo\Client($basic);
+    $receiver = str_replace(' ', '', $receiver);
+    
+    $sms = $clientSms->message()->send([
+        'to' => $receiver,
+        'from' => 'BCB VIRTUELLE',
+        'text' => $message
+    ]);*/
+
+    $endpoint = "https://api.wirepick.com/httpsms/send?client=ubabmo&password=udQ31DEzAXoC8Dyyhbut&phone=".$receiver."&text=".$message."&from=BCV";
+    
+    //$endpoint = "https://smsapi.moov.bj:8443/sendmsg/api?username=ELG&password=elg@&apikey=7073295b7bbc55100c479e3d941518ec&src=UBA+Bmo&dst=".$receiver."&text=".$message."&refnumber=6334353dc8fb7&type=web";  
+        
+    $client = new \GuzzleHttp\Client([                                                                                                                                                                   
+        'verify' => false                                                                                                                                                                               
+    ]);                                                                                                                                                                                               
+                                                                                                                                                                                                        
+    $response = $client->request('GET', $endpoint);                                                                                                                                   
+                                                                                                                                                                                                        
+    $statusCode = $response->getStatusCode();  
+}
 
 function encryptData($chaine, $cle) {
     $resultat = '';
@@ -52,19 +96,14 @@ function getUserSolde($user){
   $cards = $user->userCards;
 
   $solde = 0;
-  foreach ($cards as $key => $value) {     
-    $requestId = GtpRequest::create([
-      'created_at' => Carbon::now(),
-      'updated_at' => Carbon::now(),
-    ]);
-
+  foreach ($cards as $key => $value) {  
     $client = new Client();
     $encrypt_Key = env('ENCRYPT_KEY');
     $url = $base_url."accounts/".decryptData((string)$value->customer_id, $encrypt_Key)."/balance";
 
     $headers = [
       'programId' => $programID,
-      'requestId' => $requestId->id
+      'requestId' => Uuid::uuid4()->toString(),
     ];
 
     $auth = [
@@ -110,17 +149,12 @@ function getCarteInformation($code,$type){
 
           $data = [];
           try {
-              $requestId = GtpRequest::create([
-                  'created_at' => Carbon::now(),
-                  'updated_at' => Carbon::now(),
-              ]);
-
               $client = new Client();
               $url = $base_url."accounts/".$code;
           
               $headers = [
                   'programId' => $programID,
-                  'requestId' => $requestId->id
+                  'requestId' => Uuid::uuid4()->toString(),
               ];
           
               $auth = [
@@ -140,17 +174,13 @@ function getCarteInformation($code,$type){
           }
       
           try {
-              $requestId = GtpRequest::create([
-                  'created_at' => Carbon::now(),
-                  'updated_at' => Carbon::now(),
-              ]);
   
               $client = new Client();
               $url = $base_url."accounts/".$code."/balance";
       
               $headers = [
                   'programId' => $programID,
-                  'requestId' => $requestId->id
+                  'requestId' => Uuid::uuid4()->toString(),
               ];
       
               $auth = [
@@ -172,15 +202,10 @@ function getCarteInformation($code,$type){
           try {
               $client = new Client();
               $url = $base_url."accounts/phone-number";
-      
-              $requestId = GtpRequest::create([
-                  'created_at' => Carbon::now(),
-                  'updated_at' => Carbon::now(),
-              ]);
   
               $headers = [
                   'programId' => $programID,
-                  'requestId' => $requestId->id
+                  'requestId' => Uuid::uuid4()->toString(),
               ];
       
               $query = [
@@ -218,18 +243,13 @@ function getCarteInformation($code,$type){
           return $data;
       }else{
           if($type == 'clientInfo'){
-              try {
-                  $requestId = GtpRequest::create([
-                      'created_at' => Carbon::now(),
-                      'updated_at' => Carbon::now(),
-                  ]);
-  
+              try {  
                   $client = new Client();
                   $url = $base_url."accounts/".$code;
               
                   $headers = [
                       'programId' => $programID,
-                      'requestId' => $requestId->id
+                      'requestId' => Uuid::uuid4()->toString(),
                   ];
               
                   $auth = [
@@ -252,15 +272,10 @@ function getCarteInformation($code,$type){
               try {
                   $client = new Client();
                   $url = $base_url."accounts/phone-number";
-          
-                  $requestId = GtpRequest::create([
-                      'created_at' => Carbon::now(),
-                      'updated_at' => Carbon::now(),
-                  ]);
       
                   $headers = [
                       'programId' => $programID,
-                      'requestId' => $requestId->id
+                      'requestId' => Uuid::uuid4()->toString(),
                   ];
           
                   $query = [
@@ -292,18 +307,13 @@ function getCarteInformation($code,$type){
                   return $this->sendError($error, [], 500);
               }
           }else if($type == 'balance'){        
-              try {
-                  $requestId = GtpRequest::create([
-                      'created_at' => Carbon::now(),
-                      'updated_at' => Carbon::now(),
-                  ]);
-      
+              try {      
                   $client = new Client();
                   $url = $base_url."accounts/".$code."/balance";
           
                   $headers = [
                       'programId' => $programID,
-                      'requestId' => $requestId->id
+                      'requestId' => Uuid::uuid4()->toString(),
                   ];
           
                   $auth = [
@@ -330,7 +340,6 @@ function getCarteInformation($code,$type){
       return $this->sendError($e->getMessage(), [], 500);
   }
 }
-
 
 function hasPermission($permission){
     if(Auth::user()->role == null){
@@ -364,18 +373,18 @@ function isRestrictByAdmin($montant,$clientId,$partenaireId = null,$typeOperatio
             
             if($typeOperation == 'depot'){
                 if($item->type_acteur == 'client'){
-                    $operation = Depot::where('user_client_id',$clientId)->where('deleted',0)->where('status','completed');
+                    $operation = Depot::where('user_client_id',$clientId)->where('deleted',0)->where('status',1)->where('validate',1);
                 }else{
-                    $operation = Depot::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status','completed');
+                    $operation = Depot::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
                 }
             }else if($typeOperation == 'retrait'){
                 if($item->type_acteur == 'client'){
-                    $operation = Retrait::where('user_client_id',$clientId)->where('deleted',0)->where('status','completed');
+                    $operation = Retrait::where('user_client_id',$clientId)->where('deleted',0)->where('status',1)->where('validate',1);
                 }else{
-                    $operation = Retrait::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status','completed');
+                    $operation = Retrait::where('partenaire_id',$partenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
                 }
             }else{
-                $operation = TransfertOut::where('user_client_id',$clientId)->where('deleted',0)->where('status','completed');
+                $operation = TransfertOut::where('user_client_id',$clientId)->where('deleted',0)->where('status',1);
             }
 
             if($item->type_restriction == 'nombre'){
@@ -441,9 +450,9 @@ function isRestrictByPartenaire($montant,$partenaireId,$userPartenaireId,$typeOp
             }
 
             if($typeOperation == 'depot'){
-                $operation = Depot::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status','completed');
+                $operation = Depot::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
             }else{
-                $operation = Retrait::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status','completed');
+                $operation = Retrait::where('partenaire_id',$partenaireId)->where('user_partenaire_id',$userPartenaireId)->where('deleted',0)->where('status',1)->where('validate',1);
             }
 
             if($item->type_restriction == 'nombre'){
@@ -503,7 +512,6 @@ function checkPayment($method, $reference, $amount){
     }else{
       return 'not_success';
     }
-    
   }else{
     $public_key = env('API_KEY_KKIAPAY');
     $private_key = env('PRIVATE_KEY_KKIAPAY');
@@ -525,8 +533,7 @@ function checkPayment($method, $reference, $amount){
   }
 }
 
-function unaccent( $str )
-{
+function unaccent( $str ){
     $transliteration = array(
     'Ĳ' => 'I', 'Ö' => 'O','Œ' => 'O','Ü' => 'U','ä' => 'a','æ' => 'a',
     'ĳ' => 'i','ö' => 'o','œ' => 'o','ü' => 'u','ß' => 's','ſ' => 's',

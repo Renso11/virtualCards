@@ -13,7 +13,7 @@ class CommissionController extends Controller
     {
         try{
             $compteElg = EntityAccountCommission::where('libelle','ELG')->where('deleted',0)->first();
-            $compteElgOperations = EntityAccountCommissionOperation::where('entity_account_distribution_id',$compteElg->id)->where('deleted',0)->get();
+            $compteElgOperations = EntityAccountCommissionOperation::where('entity_account_commission_id',$compteElg->id)->where('deleted',0)->get();
             return view('commissions.elg',compact('compteElg','compteElgOperations'));
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
@@ -24,7 +24,7 @@ class CommissionController extends Controller
     {
         try{
             $compteUba = EntityAccountCommission::where('libelle','UBA')->where('deleted',0)->first();
-            $compteUbaOperations = EntityAccountCommissionOperation::where('entity_account_distribution_id',$compteUba->id)->where('deleted',0)->get();
+            $compteUbaOperations = EntityAccountCommissionOperation::where('entity_account_commission_id',$compteUba->id)->where('deleted',0)->get();
             return view('commissions.uba',compact('compteUba','compteUbaOperations'));
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());

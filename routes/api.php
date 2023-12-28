@@ -1,143 +1,92 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PartenaireController;
+use App\Http\Controllers\Api\ValidatorController;
+use App\Http\Controllers\Api\Client\ClientController;
+use App\Http\Controllers\Api\Client\TransfertController;
+use App\Http\Controllers\Api\Client\DepotController;
+use App\Http\Controllers\Api\Client\BeneficiaryController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
-
-Route::post('initiation/bmo', [App\Http\Controllers\Api\ClientController::class, 'initiationBmo'])->name('initiationBmo');
-Route::post('confirmation/bmo', [App\Http\Controllers\Api\ClientController::class, 'confirmationBmo'])->name('confirmationBmo');
+Route::post('initiation/bmo', [ClientController::class, 'initiationBmo'])->name('initiationBmo');
+Route::post('confirmation/bmo', [ClientController::class, 'confirmationBmo'])->name('confirmationBmo');
 
 
-Route::post('create/compte/client', [App\Http\Controllers\Api\ClientController::class, 'createCompteClient'])->name('createCompteClient');
-Route::post('login/compte/client', [App\Http\Controllers\Api\ClientController::class, 'loginCompteClient'])->name('loginCompteClient');
-Route::get('send/code/{id}', [App\Http\Controllers\Api\ClientController::class, 'sendCode'])->name('sendCode');
-Route::get('send/code/telephone/{telephone}', [App\Http\Controllers\Api\ClientController::class, 'sendCodeTelephone'])->name('sendCodeTelephone');
-Route::get('send/code/telephone/registration/{telephone}', [App\Http\Controllers\Api\ClientController::class, 'sendCodeTelephoneRegistration'])->name('sendCodeTelephoneRegistration');
-Route::post('check/code/otp', [App\Http\Controllers\Api\ClientController::class, 'checkCodeOtp'])->name('checkCodeOtp');
-Route::post('reset/password', [App\Http\Controllers\Api\ClientController::class, 'resetPassword'])->name('resetPassword');
-Route::post('config/pin', [App\Http\Controllers\Api\ClientController::class, 'configPin'])->name('configPin');
+Route::post('add/depot/client', [DepotController::class, 'addNewDepotClient'])->name('addDepotClient');
+Route::post('complete/depot/client', [DepotController::class, 'completeDepotClient'])->name('completeDepotClient');
 
-Route::get('get/compte/client', [App\Http\Controllers\Api\ClientController::class, 'getCompteClient'])->name('getCompteClient');
-Route::get('verification/phone/{user_id}', [App\Http\Controllers\Api\ClientController::class, 'verificationPhone'])->name('verificationPhone');
-Route::post('verification/info/perso', [App\Http\Controllers\Api\ClientController::class, 'verificationInfoPerso'])->name('verificationInfoPerso');
-Route::post('verification/info/piece', [App\Http\Controllers\Api\ClientController::class, 'verificationInfoPiece'])->name('verificationInfoPiece');
-Route::post('save/file', [App\Http\Controllers\Api\ClientController::class, 'saveFile'])->name('saveFile');
-Route::get('get/client/transactions/{id}', [App\Http\Controllers\Api\ClientController::class, 'getClientTransaction'])->name('getClientTransaction');
-Route::get('get/client/pending/transactions/{id}', [App\Http\Controllers\Api\ClientController::class, 'getClientPendingTransaction'])->name('getPendingClientTransaction');
-Route::get('get/client/pending/withdraws/{id}', [App\Http\Controllers\Api\ClientController::class, 'getClientPendingWithdraws'])->name('getClientPendingWithdraws');
-Route::get('get/client/transactions/all/{id}', [App\Http\Controllers\Api\ClientController::class, 'getClientAllTransaction'])->name('getClientAllTransaction');
+Route::post('add/transfert/client', [TransfertController::class, 'addNewTransfertClient'])->name('addTransfertClient');
+Route::post('complete/transfert/client', [TransfertController::class, 'completeTransfertClient'])->name('completeTransfertClient');
 
-Route::post('add/depot/client', [App\Http\Controllers\Api\ClientController::class, 'addNewDepotClient'])->name('addDepotClient');
-Route::post('complete/depot/client', [App\Http\Controllers\Api\ClientController::class, 'completeDepotClient'])->name('completeDepotClient');
-Route::get('get/depots/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'getDepotsClient'])->name('getDepotsClient');
-Route::get('get/depot/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getDepotDetailClient'])->name('getDepotDetailClient');
-Route::get('get/recharge/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getRechargeDetailClient'])->name('getRechargeDetailClient');
+Route::get('get/beneficiaries/{user_id}', [BeneficiaryController::class, 'getBeneficiaries'])->name('getBeneficiaries');
+Route::post('add/beneficiary/{user_id}', [BeneficiaryController::class, 'addBeneficiary'])->name('addBeneficiary');
+Route::get('delete/beneficiary/{id}', [BeneficiaryController::class, 'deleteBeneficiary'])->name('deleteBeneficiary');
+Route::post('edit/beneficiary/{id}', [BeneficiaryController::class, 'editBeneficiary'])->name('editBeneficiary');
+Route::post('add/contact/{beneficiary_id}', [BeneficiaryController::class, 'addContact'])->name('addContact');
+Route::post('edit/contact/{type}/{id}', [BeneficiaryController::class, 'editContact'])->name('editContact');
+Route::get('delete/contact/{type}/{id}', [BeneficiaryController::class, 'deleteContact'])->name('deleteContact');
 
-Route::post('add/self/retrait/client', [App\Http\Controllers\Api\ClientController::class, 'addNewSelfRetraitClient'])->name('addSelfRetraitClient');
-Route::post('complete/self/retrait/client', [App\Http\Controllers\Api\ClientController::class, 'completeSelfRetraitClient'])->name('completeSelfRetraitClient');
-Route::get('get/retraits/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'getRetraitsClient'])->name('getRetraitsClient');
-Route::get('get/retrait/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getRetraitDetailClient'])->name('getRetraitDetailClient');
-Route::get('get/self/retrait/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getSelfRetraitDetailClient'])->name('getSelfRetraitDetailClient');
-Route::post('validation/retrait/client', [App\Http\Controllers\Api\ClientController::class, 'validationRetraitAttenteClient'])->name('validationRetraitAttenteClient');
-/*Pas coder encore*/Route::post('annulation/retrait/client', [App\Http\Controllers\Api\ClientController::class, 'annulationRetraitAttenteClient'])->name('annulationRetraitAttenteClient');
+Route::post('create/compte/client', [ClientController::class, 'createCompteClient'])->name('createCompteClient');
+Route::post('login/compte/client', [ClientController::class, 'loginCompteClient'])->name('loginCompteClient');
+Route::get('send/code/{id}', [ClientController::class, 'sendCode'])->name('sendCode');
+Route::get('send/code/telephone/{telephone}', [ClientController::class, 'sendCodeTelephone'])->name('sendCodeTelephone');
+Route::get('send/code/telephone/registration/{telephone}', [ClientController::class, 'sendCodeTelephoneRegistration'])->name('sendCodeTelephoneRegistration');
+Route::post('check/code/otp', [ClientController::class, 'checkCodeOtp'])->name('checkCodeOtp');
+Route::post('reset/password', [ClientController::class, 'resetPassword'])->name('resetPassword');
+Route::post('config/pin', [ClientController::class, 'configPin'])->name('configPin');
 
-Route::post('add/transfert/client', [App\Http\Controllers\Api\ClientController::class, 'addNewTransfertClient'])->name('addTransfertClient');
-Route::post('complete/transfert/client', [App\Http\Controllers\Api\ClientController::class, 'completeTransfertClient'])->name('completeTransfertClient');
-Route::get('get/transferts/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'getTransfertsClient'])->name('getTransfertsClient');
-Route::get('get/transfert/out/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getTransfertOutDetailClient'])->name('getTransfertOutDetailClient');
-Route::get('get/transfert/in/detail/{id}', [App\Http\Controllers\Api\ClientController::class, 'getTransfertInDetailClient'])->name('getTransfertInDetailClient');
-Route::post('validation/transfert/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'validationTransfertAttenteClient'])->name('validationTransfertAttenteClient');
-Route::post('annulation/transfert/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'annulationTransfertAttenteClient'])->name('annulationTransfertAttenteClient');
+Route::get('/get/bcv/client/info/{username}', [ClientController::class, 'getCompteClientInfo'])->name('getCompteClientInfo');
+Route::get('get/fees', [ClientController::class, 'getFees'])->name('getFees');
 
-Route::get('do/retraits', [App\Http\Controllers\Api\ClientController::class, 'retraits'])->name('retraits');
-
-Route::get('liste/departement', [App\Http\Controllers\Api\ClientController::class, 'listeDepartement'])->name('listeDepartement');
-Route::get('liste/pays', [App\Http\Controllers\Api\ClientController::class, 'listePays'])->name('listePays');
-Route::get('get/virtuelle/price', [App\Http\Controllers\Api\ClientController::class, 'getVirtuellePrice'])->name('getVirtuellePrice');
-Route::get('liste/gamme', [App\Http\Controllers\Api\ClientController::class, 'listeGamme'])->name('listeGamme');
-
-Route::get('get/beneficiaries/{user_id}', [App\Http\Controllers\Api\ClientController::class, 'getBeneficiaries'])->name('getBeneficiaries');
-Route::post('add/beneficiary/{user_id}', [App\Http\Controllers\Api\ClientController::class, 'addBeneficiary'])->name('addBeneficiary');
-Route::get('delete/beneficiary/{id}', [App\Http\Controllers\Api\ClientController::class, 'deleteBeneficiary'])->name('deleteBeneficiary');
-Route::post('edit/beneficiary/{id}', [App\Http\Controllers\Api\ClientController::class, 'editBeneficiary'])->name('editBeneficiary');
-Route::post('add/contact/{beneficiary_id}', [App\Http\Controllers\Api\ClientController::class, 'addContact'])->name('addContact');
-Route::post('edit/contact/{type}/{id}', [App\Http\Controllers\Api\ClientController::class, 'editContact'])->name('editContact');
-Route::get('delete/contact/{type}/{id}', [App\Http\Controllers\Api\ClientController::class, 'deleteContact'])->name('deleteContact');
-Route::get('check/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'checkClient'])->name('checkClient');
-Route::get('check/client/with/username/{username}', [App\Http\Controllers\Api\ClientController::class, 'checkClientUsername'])->name('checkClient');
-
-/*Route::post('create/vente/virtuelle', [App\Http\Controllers\Api\VenteController::class, 'createVenteVirtuelle'])->name('createVenteVirtuelle');
-Route::post('create/vente/physique', [App\Http\Controllers\Api\VenteController::class, 'createVentePhysique'])->name('createVentePhysique');
-Route::post('stock/carte/physique', [App\Http\Controllers\Api\VenteController::class, 'stockCartePhysique'])->name('stockCartePhysique');*/
+Route::get('get/compte/client', [ClientController::class, 'getCompteClient'])->name('getCompteClient');
+Route::get('verification/phone/{user_id}', [ClientController::class, 'verificationPhone'])->name('verificationPhone');
+Route::post('verification/info/perso', [ClientController::class, 'verificationInfoPerso'])->name('verificationInfoPerso');
+Route::post('verification/info/piece', [ClientController::class, 'verificationInfoPiece'])->name('verificationInfoPiece');
+Route::post('save/file', [ClientController::class, 'saveFile'])->name('saveFile');
+Route::get('get/client/transactions/{id}', [ClientController::class, 'getClientTransaction'])->name('getClientTransaction');
+Route::get('get/client/pending/transactions/{id}', [ClientController::class, 'getClientPendingTransaction'])->name('getPendingClientTransaction');
+Route::get('get/client/pending/withdraws/{id}', [ClientController::class, 'getClientPendingWithdraws'])->name('getClientPendingWithdraws');
+Route::get('get/client/transactions/all/{id}', [ClientController::class, 'getClientAllTransaction'])->name('getClientAllTransaction');
 
 
-Route::post('login/otp/compte/client', [App\Http\Controllers\Api\ClientController::class, 'loginOtpCompteClient'])->name('loginOtpCompteClient');
-Route::get('get/compte/client/infos', [App\Http\Controllers\Api\ClientController::class, 'getCompteClientInfo'])->name('getCompteClientInfo');
+Route::post('validation/retrait/client', [ClientController::class, 'validationRetraitAttenteClient'])->name('validationRetraitAttenteClient');
+Route::post('annulation/retrait/client', [ClientController::class, 'annulationRetraitAttenteClient'])->name('annulationRetraitAttenteClient');
 
-Route::post('token/valide', [App\Http\Controllers\Api\ClientController::class, 'tokenValide'])->name('tokenValide');
+Route::get('do/retraits', [ClientController::class, 'retraits'])->name('retraits');
 
-Route::get('change/card/status', [App\Http\Controllers\Api\ClientController::class, 'changeCardStatus'])->name('changeCardStatus');
+Route::get('liste/departement', [ClientController::class, 'listeDepartement'])->name('listeDepartement');
+Route::get('liste/pays', [ClientController::class, 'listePays'])->name('listePays');
+Route::get('get/virtuelle/price', [ClientController::class, 'getVirtuellePrice'])->name('getVirtuellePrice');
+Route::get('liste/gamme', [ClientController::class, 'listeGamme'])->name('listeGamme');
 
+Route::get('check/client/{id}', [ClientController::class, 'checkClient'])->name('checkClient');
+Route::get('check/client/with/username/{username}', [ClientController::class, 'checkClientUsername'])->name('checkClient');
 
-/*Route::get('liste/depot/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'listeDepotClient'])->name('listeDepotClient');
-Route::get('liste/retrait/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'listeRetraitClient'])->name('listeRetraitClient');
-Route::get('liste/retrait/attente/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'listeRetraitAttenteClient'])->name('listeRetraitAttenteClient');
-Route::get('liste/operation/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'listeOperationClient'])->name('listeOperationClient');
-Route::get('liste/operation/periode/client/{id}', [App\Http\Controllers\Api\ClientController::class, 'listeOperationPeriodeClient'])->name('listeOperationPeriodeClient');
-Route::get('card/infos', [App\Http\Controllers\Api\ClientController::class, 'cardInfos'])->name('cardInfos');
-Route::get('statistiques/infos/{user_id}/{mois}', [App\Http\Controllers\Api\ClientController::class, 'statistiquesInfos'])->name('statistiquesInfos');*/
+Route::post('login/otp/compte/client', [ClientController::class, 'loginOtpCompteClient'])->name('loginOtpCompteClient');
+Route::get('get/compte/client/infos', [ClientController::class, 'getCompteClientInfo'])->name('getCompteClientInfo');
 
-//Route::post('change/doubleauth/user', [App\Http\Controllers\Api\ClientController::class, 'changeDoubleauthUser'])->name('changeDoubleauthUser');
-Route::post('change/info/user', [App\Http\Controllers\Api\ClientController::class, 'changeInfoUser'])->name('changeInfoUser');
+Route::post('token/valide', [ClientController::class, 'tokenValide'])->name('tokenValide');
 
-Route::post('change/name/user', [App\Http\Controllers\Api\ClientController::class, 'changeNameUser'])->name('changeNameUser');
-Route::post('change/lastname/user', [App\Http\Controllers\Api\ClientController::class, 'changeLastnameUser'])->name('changeLastnameUser');
-Route::post('change/email/user', [App\Http\Controllers\Api\ClientController::class, 'changeEmailUser'])->name('changeEmailUser');
-Route::post('change/telephone/user', [App\Http\Controllers\Api\ClientController::class, 'changeTelephoneUser'])->name('changeTelephoneUser');
-Route::post('change/password/user', [App\Http\Controllers\Api\ClientController::class, 'changePasswordUser'])->name('changePasswordUser');
-Route::post('change/pin/user', [App\Http\Controllers\Api\ClientController::class, 'changePinUser'])->name('changePinUser');
-Route::post('change/sms/user', [App\Http\Controllers\Api\ClientController::class, 'changeSmsUser'])->name('changeSmsUser');
-Route::post('change/double/user', [App\Http\Controllers\Api\ClientController::class, 'changeDoubleUser'])->name('changeDoubleUser');
-Route::post('change/adresse/user', [App\Http\Controllers\Api\ClientController::class, 'changeAdresseUser'])->name('changeAdresseUser');
+Route::get('change/card/status', [ClientController::class, 'changeCardStatus'])->name('changeCardStatus');
+Route::post('change/info/user', [ClientController::class, 'changeInfoUser'])->name('changeInfoUser');
+Route::post('change/password/user', [ClientController::class, 'changePasswordUser'])->name('changePasswordUser');
 
-Route::post('buy/carte/{type}/{moyen}', [App\Http\Controllers\Api\ClientController::class, 'buyCarte'])->name('buyCarte');
-
-Route::post('buy/card', [App\Http\Controllers\Api\ClientController::class, 'buyCard'])->name('buyCard');
-Route::post('complete/buy/card/client', [App\Http\Controllers\Api\ClientController::class, 'completeBuyCard'])->name('completeBuyCard');
-
-
-Route::post('liaison/carte', [App\Http\Controllers\Api\ClientController::class, 'liaisonCarte'])->name('liaisonCarte');
-Route::get('get/user/cards/{id}', [App\Http\Controllers\Api\ClientController::class, 'getUserCards'])->name('getUserCards');
-Route::get('search/client/update/{id}', [App\Http\Controllers\Api\ClientController::class, 'searchClientUpdate'])->name('searchClientUpdate');
-Route::get('card-info/{id}', [App\Http\Controllers\Api\ClientController::class, 'getCardInfo'])->name('getCardInfo');
-Route::get('card-info/account-info/{id}', [App\Http\Controllers\Api\ClientController::class, 'getAccountInfo'])->name('getAccountInfo');
-Route::get('card-info/balance/{id}', [App\Http\Controllers\Api\ClientController::class, 'getBalance'])->name('getBalance');
-Route::get('card-info/client-info/{id}', [App\Http\Controllers\Api\ClientController::class, 'getClientInfo'])->name('getClientInfo');
-Route::get('get/dashboard/{id}', [App\Http\Controllers\Api\ClientController::class, 'getDashboard'])->name('getDashboard');
-Route::get('get/solde/{id}', [App\Http\Controllers\Api\ClientController::class, 'getSolde'])->name('getSolde');
-Route::get('kkiapay/infos', [App\Http\Controllers\Api\ClientController::class, 'getKkpInfos'])->name('getKkpInfos');
-Route::get('cards/infos', [App\Http\Controllers\Api\ClientController::class, 'getCardsInfos'])->name('getCardsInfos');
-Route::get('get/services', [App\Http\Controllers\Api\ClientController::class, 'getServices'])->name('getServices');
-Route::get('get/mobile/wallets', [App\Http\Controllers\Api\ClientController::class, 'getMobileWallet'])->name('getMobileWallet');
-Route::post('set/default/card', [App\Http\Controllers\Api\ClientController::class, 'setDefaultCard'])->name('setDefaultCard');
-
-
-Route::get('get/vente/physique', [App\Http\Controllers\Api\VenteController::class, 'getVentePhysique'])->name('getVentePhysique');
-
-Route::post('get/carte/information/route/{code}', [App\Http\Controllers\Api\ClientController::class, 'getCarteInformationRoute']);
-Route::post('carte/transaction/{code}', [App\Http\Controllers\Api\ClientController::class, 'carteTransaction']);
-
+Route::post('buy/card', [ClientController::class, 'buyCard'])->name('buyCard');
+Route::post('complete/buy/card/client', [ClientController::class, 'completeBuyCard'])->name('completeBuyCard');
+Route::post('liaison/carte', [ClientController::class, 'liaisonCarte'])->name('liaisonCarte');
+Route::get('get/user/cards/{id}', [ClientController::class, 'getUserCards'])->name('getUserCards');
+Route::get('search/client/update/{id}', [ClientController::class, 'searchClientUpdate'])->name('searchClientUpdate');
+Route::get('card-info/{id}', [ClientController::class, 'getCardInfo'])->name('getCardInfo');
+Route::get('card-info/account-info/{id}', [ClientController::class, 'getAccountInfo'])->name('getAccountInfo');
+Route::get('card-info/balance/{id}', [ClientController::class, 'getBalance'])->name('getBalance');
+Route::get('card-info/client-info/{id}', [ClientController::class, 'getClientInfo'])->name('getClientInfo');
+Route::get('get/dashboard/{id}', [ClientController::class, 'getDashboard'])->name('getDashboard');
+Route::get('get/solde/{id}', [ClientController::class, 'getSolde'])->name('getSolde');
+Route::get('kkiapay/infos', [ClientController::class, 'getKkpInfos'])->name('getKkpInfos');
+Route::get('cards/infos', [ClientController::class, 'getCardsInfos'])->name('getCardsInfos');
+Route::get('get/services', [ClientController::class, 'getServices'])->name('getServices');
+Route::get('get/mobile/wallets', [ClientController::class, 'getMobileWallet'])->name('getMobileWallet');
+Route::post('set/default/card', [ClientController::class, 'setDefaultCard'])->name('setDefaultCard');
 
 
 
@@ -146,8 +95,6 @@ Route::post('carte/transaction/{code}', [App\Http\Controllers\Api\ClientControll
 
 
 Route::post('login/partenaire', [PartenaireController::class, 'loginPartenaire'])->name('loginPartenaire');
-Route::get('/get/bcv/client/info/{username}', [App\Http\Controllers\Api\ClientController::class, 'getCompteClientInfo'])->name('getCompteClientInfo');
-Route::get('get/fees', [App\Http\Controllers\Api\ClientController::class, 'getFees'])->name('getFees');
 Route::get('get/services/partenaire', [PartenaireController::class, 'getServices'])->name('getServices');
 Route::get('get/dashboard/partenaire/{id}', [PartenaireController::class, 'getDashboardPartenaire'])->name('getDashboardPartenaire');
 
@@ -229,8 +176,8 @@ Route::get('account/transactions/{program_id}', [PartenaireController::class, 'a
 
 // Utilitaire de validation
 
-Route::post('login/compte/validator', [App\Http\Controllers\Api\ValidatorController::class, 'loginCompteValdiator'])->name('loginCompteClient');
-Route::get('get/pending/customers', [App\Http\Controllers\Api\ValidatorController::class, 'pendingCustomerAccount'])->name('pendingCustomerAccount');
-Route::get('get/motif/list', [App\Http\Controllers\Api\ValidatorController::class, 'getMotifList'])->name('getMotifList');
-Route::post('validate/pending/customers', [App\Http\Controllers\Api\ValidatorController::class, 'validatePendingCustomerAccount'])->name('validatePendingCustomerAccount');
-Route::post('reject/pending/customers', [App\Http\Controllers\Api\ValidatorController::class, 'rejectPendingCustomerAccount'])->name('rejectPendingCustomerAccount');
+Route::post('login/compte/validator', [ValidatorController::class, 'loginCompteValdiator'])->name('loginCompteClient');
+Route::get('get/pending/customers', [ValidatorController::class, 'pendingCustomerAccount'])->name('pendingCustomerAccount');
+Route::get('get/motif/list', [ValidatorController::class, 'getMotifList'])->name('getMotifList');
+Route::post('validate/pending/customers', [ValidatorController::class, 'validatePendingCustomerAccount'])->name('validatePendingCustomerAccount');
+Route::post('reject/pending/customers', [ValidatorController::class, 'rejectPendingCustomerAccount'])->name('rejectPendingCustomerAccount');

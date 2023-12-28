@@ -10,7 +10,7 @@ class Depot extends Model
     use HasFactory;
     protected $guarded = [];public $incrementing = false; 
     
-    public function UserClient(){
+    public function userClient(){
         return $this->belongsTo('App\Models\UserClient');
     }
 

@@ -9,4 +9,8 @@ class Frai extends Model
 {
     use HasFactory;
     protected $guarded = [];public $incrementing = false; 
+
+    public function fraiCompteCommissions(){
+        return $this->hasMany('App\Models\FraiCompteCommission')->where('deleted',0);
+    }
 }

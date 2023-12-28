@@ -16,17 +16,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use App\Models\GtpRequest;
+use App\Models\Recharge;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use Auth;
 use Ramsey\Uuid\Uuid;
-
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-
-use PhpOffice\PhpSpreadsheet\Reader\Exception;
-
-use PhpOffice\PhpSpreadsheet\Writer\Xls;
-use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ClientController extends Controller
@@ -43,17 +37,12 @@ class ClientController extends Controller
         $data = [];
 
         try {   
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
             $client = new Client();
             $url = $base_url."accounts/".$code;
         
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id
+                'requestId' => Uuid::uuid4()->toString(),
             ];
         
             $auth = [
@@ -78,14 +67,9 @@ class ClientController extends Controller
             $client = new Client();
             $url = $base_url."accounts/phone-number";
     
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-    
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id
+                'requestId' => Uuid::uuid4()->toString(),
             ];
     
             $query = [
@@ -168,14 +152,13 @@ class ClientController extends Controller
 
     public function clientsAttentes(Request $request)
     {
-        //try{
+        try{
             $userClients = UserClient::where('deleted',0)->where('verification',0)->orderBy('id','desc')->get();
             $countries = $this->countries;
-            //dd($userClients);
             return view('clients.attentes',compact('userClients','countries'));
-        /*} catch (\Exception $e) {
+        } catch (\Exception $e) {
             return back()->withError($e->getMessage());
-        }*/
+        }
     }
 
 
@@ -315,6 +298,84 @@ class ClientController extends Controller
         }
     }
 
+    public function clientOperationsAttentes(Request $request)
+    {
+        try{
+            
+            $depots = Recharge::where('status','pending')->where('deleted',0)->get();
+            foreach($depots as $depot){
+                $depot->date = $depot->created_at->format('d-m-Y');
+                $depot->type = 'Recharge';
+                $depot->partenaire = $depot->partenaire;
+                $depot->userClient = $depot->userClient;
+            }
+
+            $transferts = TransfertOut::where('status','pending')->where('deleted',0)->get();
+            foreach($transferts as $transfert){
+                $transfert->date = $transfert->created_at->format('d-m-Y');
+                $transfert->type = 'Transfert';
+                $transfert->partenaire = $transfert->partenaire;
+                $transfert->userClient = $transfert->userClient;
+            }
+            
+            $transactions = array_merge($depots->toArray(), $transferts->toArray());
+            
+        
+            array_multisort(
+                array_map(
+                    static function ($element) {
+                        return $element['created_at'];
+                    },
+                    $transactions
+                ),
+                SORT_DESC,
+                $transactions
+            );
+            return view('clients.operations.attentes',compact('transactions'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
+    public function clientOperationsFinalises(Request $request)
+    {
+        try{
+            
+            $depots = Recharge::where('status','completed')->where('deleted',0)->get();
+            foreach($depots as $depot){
+                $depot->date = $depot->created_at->format('d-m-Y');
+                $depot->type = 'Recharge';
+                $depot->partenaire = $depot->partenaire;
+                $depot->userClient = $depot->userClient;
+            }
+
+            $transferts = TransfertOut::where('status','completed')->where('deleted',0)->get();
+            foreach($transferts as $transfert){
+                $transfert->date = $transfert->created_at->format('d-m-Y');
+                $transfert->type = 'Transfert';
+                $transfert->partenaire = $transfert->partenaire;
+                $transfert->userClient = $transfert->userClient;
+            }
+            
+            $transactions = array_merge($depots->toArray(), $transferts->toArray());
+            
+        
+            array_multisort(
+                array_map(
+                    static function ($element) {
+                        return $element['created_at'];
+                    },
+                    $transactions
+                ),
+                SORT_DESC,
+                $transactions
+            );
+            return view('clients.operations.finalises',compact('transactions'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
     public function kycEdit(Request $request)
     { 
         //dd($request);
@@ -382,11 +443,6 @@ class ClientController extends Controller
             if (strlen($name) > 19){
                 $name = substr($name, 0, 19);
             }
-            
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
 
             $body = [
                 "firstName" => $data['nom'],
@@ -414,7 +470,7 @@ class ClientController extends Controller
             
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id,
+                'requestId' => Uuid::uuid4()->toString(),
                 'Content-Type' => 'application/json', 'Accept' => 'application/json'
             ];
         
@@ -539,10 +595,7 @@ class ClientController extends Controller
                     $name = substr($name, 0, 19);
                 }
                 
-                $requestId = GtpRequest::create([
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
+                 
 
                 $body = [
                     "firstName" => $data['nom'],
@@ -570,7 +623,7 @@ class ClientController extends Controller
                 
                 $headers = [
                     'programId' => $programID,
-                    'requestId' => $requestId->id,
+                    'requestId' => Uuid::uuid4()->toString(),
                     'Content-Type' => 'application/json', 'Accept' => 'application/json'
                 ];
             

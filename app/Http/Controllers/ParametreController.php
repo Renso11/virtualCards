@@ -3,13 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Gamme;
 use App\Models\Frai;
-use App\Models\Info;
-use App\Models\Service;
-use App\Models\Commission;
-use App\Models\RolePartenaire;
-use App\Models\RolePartenairePermission;
+use App\Models\CompteCommission;
+use App\Models\FraiCompteCommission;
 use App\Models\Restriction;
 use App\Models\Role;
 use App\Models\Permission;
@@ -18,158 +14,60 @@ use Illuminate\Support\Carbon;
 use Ramsey\Uuid\Uuid;
 
 class ParametreController extends Controller
-{
-
-
-    public function generales(Request $request){
-        try {
-            $info_card = Info::where('deleted',0)->first();
-            $services = Service::where('deleted',0)->get();
-            return view('params.generales',compact('info_card','services'));
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        };
-    }
-
-    public function cardInfosUpdate(Request $request){
-        try {
-            $info_card = Info::where('deleted',0)->first();
-
-            if(!$info_card){
-                Info::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'card_max' => $request->nb_card,
-                    'card_price' => $request->pu_card,
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
-            }else{
-                $info_card->card_max = $request->nb_card;
-                $info_card->card_price = $request->pu_card;
-                $info_card->save();
-            }
-            return back()->withSuccess('Informations modifiées avec succes');
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        };
-    }
-
-
-    public function gammes(Request $request)
-    {
-        try{
-            $gammes = Gamme::where('deleted',0)->get();
-            return view('gammes.index',compact('gammes'));
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-    public function gammeAdd(Request $request)
-    {
-        try{
-            Gamme::create([
-                        'id' => Uuid::uuid4()->toString(),
-                'libelle' => $request->libelle,
-                'prix' => $request->prix,
-                'type' => $request->type,
-                'description' => $request->description,
-                'status' => 1,
-                'deleted' => 0,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-            return back()->withSuccess("Gamme enregistrée avec succès");
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-    public function gammeEdit(Request $request)
-    {   
-        try{
-            $gamme = Gamme::where('id',$request->id)->where('deleted',0)->first();
-
-            $gamme->libelle = $request->libelle;
-            $gamme->prix = $request->prix;
-            $gamme->type = $request->type;
-            $gamme->description = $request->description;
-            $gamme->updated_at = Carbon::now();
-            $gamme->save();
-            return back()->withSuccess("Modification effectuée avec succès");
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-    public function gammeDelete(Request $request)
-    {   
-        try{
-            $gamme = Gamme::where('id',$request->id)->where('deleted',0)->first();
-            $gamme->deleted = 1;
-            $gamme->save();
-            return back()->withSuccess("Suppression effectuée avec succès");
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-    public function gammeActivation(Request $request)
-    {   
-        try{
-            $gamme = Gamme::where('id',$request->id)->where('deleted',0)->first();
-            $gamme->status = 1;
-            $gamme->save();
-            return back()->withSuccess("Activation effectuée avec succès");
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-    public function gammeDesactivation(Request $request)
-    {   
-        try{
-            $gamme = Gamme::where('id',$request->id)->where('deleted',0)->first();
-            $gamme->status = 0;
-            $gamme->save();
-            return back()->withSuccess("Desactivation effectuée avec succès");
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-
-    
+{  
 
     public function frais(Request $request){
         try {
             $frais = Frai::where('deleted',0)->get();
-            return view('frais.index',compact('frais'));
+            $compteCommissions = CompteCommission::where('deleted',0)->get();
+
+            return view('frais.index',compact('frais','compteCommissions'));
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         };
     }
 
     public function fraisAdd(Request $request){
-        try {            
-            Frai::create([
+        try {        
+            $frais = Frai::create([
                 'id' => Uuid::uuid4()->toString(),
                 'type' => $request->type,
                 'type_operation' => $request->type_operation,
                 'start' => $request->debut,
                 'end' => $request->fin,
                 'value' => $request->value,
-                'type_commission_elg' => $request->type_elg,
-                'value_commission_elg' => $request->value_elg,
-                'type_commission_bank' => $request->type_bank,
-                'value_commission_bank' => $request->value_bank,
                 'type_commission_partenaire' => $request->type_partenaire,
                 'value_commission_partenaire' => $request->value_partenaire,
                 'deleted' => 0,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ]);
+
+            $compteCommissions = CompteCommission::where('deleted',0)->get();
+
+            foreach($compteCommissions as $item){
+                if(array_key_exists('id_'.strtolower($item->libelle),$request->all())){
+                    FraiCompteCommission::create([
+                        'id' => Uuid::uuid4()->toString(),
+                        'frai_id' => $frais->id,
+                        'compte_commission_id' => $item->id,
+                        'type' => $request->all()['type_'.strtolower($item->libelle)],
+                        'value' => $request->all()['value_'.strtolower($item->libelle)],
+                        'deleted' => 0,
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now()
+                    ]);
+                }
+            }
+            
+
+            foreach ($frais as $value) {
+            }
+            /*
+            'type_commission_elg' => $request->type_elg,
+            'value_commission_elg' => $request->value_elg,
+            'type_commission_bank' => $request->type_bank,
+            'value_commission_bank' => $request->value_bank,*/
 
             return back()->withSuccess('Frais et commissions enregistré avec success');
         } catch (\Exception $e) {
@@ -212,74 +110,7 @@ class ParametreController extends Controller
             return  back()->withError($e->getMessage());
         };
     }
-    
 
-    public function commissions(Request $request){
-        try {
-            $commissions = Commission::where('deleted',0)->get();
-            return view('commissions.index',compact('commissions'));
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        };
-    }
-
-    public function commissionsAdd(Request $request){
-        try {
-            $request->validate([
-                'type_operation' => 'required',
-                'type' => 'required',
-                'value' => 'required'
-            ]);
-            /*if($request->type == 'Taux fixe'){
-                $frais = Frai::where('type_operation',$request->type_operation)->orderBy('id','DESC')->first();
-                if($frais && $frais->type_operation)
-            }*/
-            Commission::create([
-                        'id' => Uuid::uuid4()->toString(),
-                'type' => $request->type,
-                'type_operation' => $request->type_operation,
-                'value' => $request->value,
-                'deleted' => 0,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]);
-            return back()->withSuccess('Commissions enregistré avec success');
-        } catch (\Exception $e) {
-            return  back()->withError($e->getMessage());
-        };
-    }
-
-    public function commissionsEdit(Request $request){
-        try {
-            $request->validate([
-                'type' => 'required',
-                'type_operation' => 'required',
-                'value' => 'required',
-            ]);
-            $req = $request->all();
-            $frai = Commission::where('id',$request->id)->where('deleted',0)->first();
-            $frai->type = $request->type;
-            $frai->type_operation = $request->type_operation;
-            $frai->value = $request->value;
-            $frai->save();
-            return back()->withSuccess('Modification effectué avec success');
-        } catch (\Exception $e) {
-            return  back()->withError($e->getMessage());
-        };
-    }
-
-    public function commissionsDelete(Request $request){
-        try {
-            $req = $request->all();
-            $frai = Commission::where('id',$request->id)->where('deleted',0)->first();
-            $frai->deleted = 1;
-            $frai->save();
-            return back()->withSuccess('Suppression effectuée avec success');
-
-        } catch (\Exception $e) {
-            return  back()->withError($e->getMessage());
-        };
-    }
     
     public function roles(Request $request){
         try {
@@ -387,6 +218,7 @@ class ParametreController extends Controller
             return back()->withError($e->getMessage());
         };
     }
+
 
     public function restrictionsAdd(Request $request){
         try {

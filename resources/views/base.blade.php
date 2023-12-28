@@ -49,7 +49,7 @@
             <a href="/" class="brand-link">
                 <img src="/dist/img/bcb.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
                     style="opacity: .8">
-                <span class="brand-text font-weight-light">BcbVirtuelle</span>
+                <span class="brand-text font-weight-light">BCC</span>
             </a>
 
             <!-- Sidebar -->
@@ -60,20 +60,6 @@
                         <a href="#" class="d-block">{{ Auth::user()->name . ' ' . Auth::user()->lastname }}</a>
                     </div>
                 </div>
-
-                <!-- SidebarSearch Form -->
-                <div class="form-inline">
-                    <div class="input-group" data-widget="sidebar-search">
-                        <input class="form-control form-control-sidebar" type="search" placeholder="Search"
-                            aria-label="Search">
-                        <div class="input-group-append">
-                            <button class="btn btn-sidebar">
-                                <i class="fas fa-search fa-fw"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
@@ -82,67 +68,115 @@
                             <a href="/" class="nav-link @if (Route::currentRouteName() == 'welcome') active @endif">
                                 <i class="nav-icon fas fa-tachometer-alt"></i>
                                 <p>
-                                    Tableau de bord
+                                    Accueil
                                 </p>
                             </a>
                         </li>
 
-                        @if (hasPermission('roles') || hasPermission('frais') || hasPermission('commissions') || hasPermission('restrictions') || hasPermission('gammes') || hasPermission('carte.physiques'))
-                            <li class="nav-header">Parametres</li>
-                        @endif
-                        @if (hasPermission('roles'))
-                            <li class="nav-item">
-                                <a href="/params/generales" class="nav-link @if (Route::currentRouteName() == 'generales') active @endif">
-                                    <i class="nav-icon fas fa-cog"></i>
-                                    <p>
-                                        Générales
-                                    </p>
-                                </a>
-                            </li>
-                        @endif
-                        @if (hasPermission('roles'))
-                            <li class="nav-item">
-                                <a href="/roles" class="nav-link @if (Route::currentRouteName() == 'roles') active @endif">
-                                    <i class="nav-icon fas fa-registered"></i>
-                                    <p>
-                                        Roles
-                                    </p>
-                                </a>
-                            </li>
-                        @endif
-                        @if (hasPermission('frais'))
-                            <li class="nav-item">
-                                <a href="/frais" class="nav-link @if (Route::currentRouteName() == 'frais') active @endif">
-                                    <i class="nav-icon fas fa-cog"></i>
-                                    <p>
-                                        Frais et commissions
-                                    </p>
-                                </a>
-                            </li>
-                        @endif
-                        @if (hasPermission('restrictions'))
-                            <li class="nav-item">
-                                <a href="/restrictions" class="nav-link @if (Route::currentRouteName() == 'restrictions') active @endif">
-                                    <i class="nav-icon fas fa-exclamation-circle"></i>
-                                    <p>
-                                        Restrictions
-                                    </p>
-                                </a>
-                            </li>
-                        @endif
-                        @if (hasPermission('users'))
-                            <li class="nav-item">
-                                <a href="/users" class="nav-link @if (Route::currentRouteName() == 'users') active @endif">
-                                    <i class="nav-icon fas fa-users-cog"></i>
-                                    <p>
-                                        Utilisateurs
-                                    </p>
-                                </a>
-                            </li>
-                        @endif
-                        @if (hasPermission('clients') || hasPermission('clients.attentes') || hasPermission('partenaires') || hasPermission('users') || hasPermission('rapport'))
-                            <li class="nav-header">Exploitation</li>
-                        @endif
+                        <li class="nav-header">Administrateur</li>
+                        
+                        <li class="nav-item @if (in_array(Route::currentRouteName(), ['users', 'roles','permissions'])) menu-open @endif">
+                            <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['users', 'roles','permissions'])) active @endif">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>
+                                    Param Utilisateurs
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/users" class="nav-link @if (Route::currentRouteName() == 'users') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Compte utilisateurs
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/roles" class="nav-link @if (Route::currentRouteName() == 'roles') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Gestion des roles
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/roles" class="nav-link @if (Route::currentRouteName() == 'permissions') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Gestion des permissions
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                        <li class="nav-item @if (in_array(Route::currentRouteName(), ['frais', 'restrictions'])) menu-open @endif">
+                            <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['frais', 'restrictions'])) active @endif">
+                                <i class="nav-icon fas fa-cog"></i>
+                                <p>
+                                    Param Operations
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/frais" class="nav-link @if (Route::currentRouteName() == 'frais') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Frais et commissions
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/restrictions" class="nav-link @if (Route::currentRouteName() == 'restrictions') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Restrictions opérations
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fab fa-android"></i>
+                                <p>
+                                    Param applications
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/app/client" class="nav-link @if (Route::currentRouteName() == 'app.client') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Application Client
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/app/partenaire" class="nav-link @if (Route::currentRouteName() == 'app.partenaire') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Application Partenaire
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/app/admin" class="nav-link @if (Route::currentRouteName() == 'app.admin') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Application Admin
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-header">Exploitation</li>
+
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="nav-icon fas fa-briefcase"></i>
@@ -153,311 +187,176 @@
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="/commissions/elg" class="nav-link">
+                                    <a href="/compte/commission" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>
-                                            Compte commission ELG
+                                            Compte commission
                                         </p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="/commissions/uba" class="nav-link">
+                                    <a href="/compte/mouvement" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>
-                                            Compte commission UBA
-                                        </p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="/commissions/partenaires" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>
-                                            Compte partenaires
+                                            Compte de mouvement
                                         </p>
                                     </a>
                                 </li>
                             </ul>
                         </li>
-                        @if (hasPermission('clients') || hasPermission('clients.attentes'))
-                            <li class="nav-item @if (in_array(Route::currentRouteName(), ['clients.attentes', 'clients', 'rechargements.client'])) menu-open @endif">
-                                <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['clients.attentes', 'clients', 'rechargements.client'])) active @endif">
-                                    <i class="nav-icon fas fa-users"></i>
-                                    <p>
-                                        Clients
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    @if (hasPermission('clients'))
-                                        <li class="nav-item">
-                                            <a href="/clients" class="nav-link @if (Route::currentRouteName() == 'clients') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>
-                                                    Compte validé
-                                                </p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('clients.attentes'))
-                                        <li class="nav-item">
-                                            <a href="/clients/attentes" class="nav-link @if (Route::currentRouteName() == 'clients.attentes') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>
-                                                    Compte en attente
-                                                </p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    <li class="nav-item">
-                                        <a href="/rechargements/clients" class="nav-link @if (Route::currentRouteName() == 'rechargements.client') active @endif">
-                                            <i class="far fa-circle nav-icon"></i>
-                                            <p>Rechargement compte</p>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
-                        @if (hasPermission('partenaires') || hasPermission('partenaire.recharge.attentes') || hasPermission('partenaire.vente.attentes'))
-                            <li class="nav-item @if (in_array(Route::currentRouteName(), ['partenaires', 'partenaire.recharge.attentes', 'partenaire.vente.attentes'])) menu-open @endif">
-                                <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['partenaires', 'partenaire.recharge.attentes', 'partenaire.vente.attentes'])) active @endif">
-                                    <i class="nav-icon fas fa-users"></i>
-                                    <p>
-                                        Partenaires
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="/partenaires" class="nav-link @if (Route::currentRouteName() == 'partenaires') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Liste
-                                            </p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/partenaire/recharges/attentes" class="nav-link @if (Route::currentRouteName() == 'partenaire.recharge.attentes') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Validation rechargemts
-                                            </p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/partenaire/ventes/attentes" class="nav-link @if (Route::currentRouteName() == 'partenaire.vente.attentes') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Validation ventes
-                                            </p>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
-                        @if (hasPermission('partenaires') || hasPermission('partenaire.api') || hasPermission('partenaire.api.fees'))
-                            <li class="nav-item @if (in_array(Route::currentRouteName(), ['partenaires.api', 'partenaires.api.fees'])) menu-open @endif">
-                                <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['partenaires.api', 'partenaire.api.fees'])) active @endif">
-                                    <i class="nav-icon fas fa-users"></i>
-                                    <p>
-                                        Partenaires via API
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="/partenaires/api" class="nav-link @if (Route::currentRouteName() == 'partenaires.api') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Liste
-                                            </p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/partenaires/api/fees" class="nav-link @if (Route::currentRouteName() == 'partenaire.api.fees') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Configuration des frais
-                                            </p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/partenaires/api/recharge/attentes" class="nav-link @if (Route::currentRouteName() == 'partenaire.api.fees') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Appro en attente
-                                            </p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/partenaires/api/transactions" class="nav-link @if (Route::currentRouteName() == 'partenaire.api.fees') active @endif">
-                                            <i class="nav-icon far fa-circle"></i>
-                                            <p>
-                                                Transactions
-                                            </p>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
-                        <!--li class="nav-item">
-                            <a href="/carte/perso" class="nav-link">
-                                <i class="far fa-credit-card nav-icon"></i>
-                                <p>Cmde carte perso</p>
+
+                        <li class="nav-item @if (in_array(Route::currentRouteName(), ['clients.attentes', 'clients', 'rechargements.client'])) menu-open @endif">
+                            <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['clients.attentes', 'clients', 'rechargements.client'])) active @endif">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>
+                                    Clients
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/clients" class="nav-link @if (Route::currentRouteName() == 'clients') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Liste compte
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/clients/attentes" class="nav-link @if (Route::currentRouteName() == 'clients.attentes') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Compte en attente
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/client/operations/attentes" class="nav-link @if (Route::currentRouteName() == 'clients.attentes') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Operations en attentes
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/client/operations/finalises" class="nav-link @if (Route::currentRouteName() == 'clients.attentes') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Operations finalisées
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
-                        <li-- class="nav-item">
-                            <a href="/carte/perso" class="nav-link">
-                                <i class="far fa-credit-card nav-icon"></i>
-                                <p>Compte UBA</p>
+
+                        <li class="nav-item @if (in_array(Route::currentRouteName(), ['partenaires', 'partenaire.recharge.attentes', 'partenaire.vente.attentes'])) menu-open @endif">
+                            <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['partenaires', 'partenaire.recharge.attentes', 'partenaire.vente.attentes'])) active @endif">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>
+                                    Partenaires
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
                             </a>
-                        </li-->
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/partenaires" class="nav-link @if (Route::currentRouteName() == 'partenaires') active @endif">
+                                        <i class="nav-icon far fa-circle"></i>
+                                        <p>
+                                            Liste compte
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/partenaire/recharges/attentes" class="nav-link @if (Route::currentRouteName() == 'partenaire.recharge.attentes') active @endif">
+                                        <i class="nav-icon far fa-circle"></i>
+                                        <p>
+                                            Recharge de compte
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/partenaire/ventes/attentes" class="nav-link @if (Route::currentRouteName() == 'partenaire.vente.attentes') active @endif">
+                                        <i class="nav-icon far fa-circle"></i>
+                                        <p>
+                                            Appro de cartes
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/partenaire/operations/attentes" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Operations en attentes
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/partenaire/operations/finalises" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Operations finalisés
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                        <li class="nav-header">Etat et rapport</li>
 
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-file"></i>
+                                <p>
+                                    Opérations
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/rapport/operation/client" class="nav-link @if (Route::currentRouteName() == 'rapport.retraits') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Par Client</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/rapport/operation/partenaire" class="nav-link @if (Route::currentRouteName() == 'rapport.transferts') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Par partenaire</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
-                        <!--@if (hasPermission('vente.physiques.attentes') || hasPermission('vente.physiques.finalises') || hasPermission('vente.physiques.rejetes'))
-                            <li class="nav-item @if (in_array(Route::currentRouteName(), ['vente.physiques.attentes', 'vente.physiques.finalises', 'vente.physiques.rejetes'])) menu-open @endif">
-                                <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['vente.physiques.attentes', 'vente.physiques.finalises', 'vente.physiques.rejetes'])) active @endif">
-                                    <i class="nav-icon fas fa-shopping-cart"></i>
-                                    <p>
-                                        Ventes physiques
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    @if (hasPermission('vente.physiques.attentes'))
-                                        <li class="nav-item">
-                                            <a href="/ventes/physiques/attentes" class="nav-link @if (Route::currentRouteName() == 'vente.physiques.attentes') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>En attente</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('vente.physiques.finalises'))
-                                        <li class="nav-item">
-                                            <a href="/ventes/physiques/finalises" class="nav-link @if (Route::currentRouteName() == 'vente.physiques.finalises') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>Finalisés</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('vente.physiques.rejetes'))
-                                        <li class="nav-item">
-                                            <a href="/ventes/physiques/rejetes" class="nav-link @if (Route::currentRouteName() == 'vente.physiques.rejetes') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>Rejetés</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </li>
-                        @endif
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-file"></i>
+                                <p>
+                                    Rapports
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="/rapport/operation/compte" class="nav-link @if (Route::currentRouteName() == 'rapport.depots') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Solde/Jours</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/rapport/operation/client" class="nav-link @if (Route::currentRouteName() == 'rapport.retraits') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Operations suspectes</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/rapport/operation/partenaire" class="nav-link @if (Route::currentRouteName() == 'rapport.transferts') active @endif">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Mouvement par compte</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
-                        @if (hasPermission('vente.virtuelles.attentes') || hasPermission('vente.virtuelles.finalises') || hasPermission('vente.virtuelles.rejetes'))
-                            <li class="nav-item @if (in_array(Route::currentRouteName(), ['vente.virtuelles.attentes', 'vente.virtuelles.finalises', 'vente.virtuelles.rejetes'])) menu-open @endif">
-                                <a href="#" class="nav-link @if (in_array(Route::currentRouteName(), ['vente.virtuelles.attentes', 'vente.virtuelles.finalises', 'vente.virtuelles.rejetes'])) active @endif">
-                                    <i class="nav-icon fas fa-shopping-cart"></i>
-                                    <p>
-                                        Ventes virtuelles
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    @if (hasPermission('vente.virtuelles.attentes'))
-                                        <li class="nav-item">
-                                            <a href="/ventes/virtuelles/attentes" class="nav-link @if (Route::currentRouteName() == 'vente.virtuelles.attentes') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>En attente</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('vente.virtuelles.finalises'))
-                                        <li class="nav-item">
-                                            <a href="/ventes/virtuelles/finalises" class="nav-link @if (Route::currentRouteName() == 'vente.virtuelles.finalises') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>Finalisés</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('vente.virtuelles.rejetes'))
-                                        <li class="nav-item">
-                                            <a href="/ventes/virtuelles/rejetes" class="nav-link @if (Route::currentRouteName() == 'vente.virtuelles.rejetes') active @endif">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>Rejetés</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </li>
-                        @endif
-
-                        @if (hasPermission('rechargements.attente') || hasPermission('rechargement.finalises') || hasPermission('rechargement.rejetes'))
-                            <li class="nav-item">
-                                <a href="#" class="nav-link">
-                                    <i class="nav-icon fas fa-money-bill"></i>
-                                    <p>
-                                        Rechargements
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    @if (hasPermission('rechargements.attente'))
-                                        <li class="nav-item">
-                                            <a href="/rechargements/attentes" class="nav-link">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>En attente</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('rechargement.finalises'))
-                                        <li class="nav-item">
-                                            <a href="/rechargements/finalises" class="nav-link">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>Finalisés</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if (hasPermission('rechargement.rejetes'))
-                                        <li class="nav-item">
-                                            <a href="/rechargements/rejetes" class="nav-link">
-                                                <i class="far fa-circle nav-icon"></i>
-                                                <p>Rejetés</p>
-                                            </a>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </li>
-                        @endif
-                        <li class="nav-header">Etats</li>-->
-                        @if (hasPermission('rapport'))
-                            <li class="nav-item  @if (in_array(Route::currentRouteName(), ['rapport.depots', 'rapport.retraits', 'rapport.transferts'])) menu-open @endif">
-                                <a href="#" class="nav-link  @if (in_array(Route::currentRouteName(), ['rapport.depots', 'rapport.retraits', 'rapport.transferts'])) active @endif">
-                                    <i class="nav-icon fas fa-file"></i>
-                                    <p>
-                                        Rapports
-                                        <i class="fas fa-angle-left right"></i>
-                                    </p>
-                                </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="/rapport/depots" class="nav-link @if (Route::currentRouteName() == 'rapport.depots') active @endif">
-                                            <i class="far fa-circle nav-icon"></i>
-                                            <p>Operations de depots</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/rapport/retraits" class="nav-link @if (Route::currentRouteName() == 'rapport.retraits') active @endif">
-                                            <i class="far fa-circle nav-icon"></i>
-                                            <p>Operations de retraits</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="/rapport/transferts" class="nav-link @if (Route::currentRouteName() == 'rapport.transferts') active @endif">
-                                            <i class="far fa-circle nav-icon"></i>
-                                            <p>Operations de transferts</p>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
                         <li class="nav-header">Compte</li>
                         <li class="nav-item">
                             <a href="/profile" class="nav-link @if (Route::currentRouteName() == 'profile') active @endif">
@@ -481,9 +380,7 @@
                         </li>
                     </ul>
                 </nav>
-                <!-- /.sidebar-menu -->
             </div>
-            <!-- /.sidebar -->
         </aside>
 
         <!-- Content Wrapper. Contains page content -->

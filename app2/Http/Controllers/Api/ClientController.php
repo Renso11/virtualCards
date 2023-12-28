@@ -699,7 +699,7 @@ class ClientController extends Controller
     }
 
     public function getSolde(Request $request){
-        $cards = UserCard::where('user_client_id',$request->id)->orderBy('created_at','DESC')->limit(5)->get();
+        $cards = UserCard::where('user_client_id',$request->id)->orderBy('created_at','DESC')->get();
         $solde = 0;
         foreach ($cards as $key => $card) {
             $solde += (int) getCarteInformation((string)$card->customer_id, 'balance');

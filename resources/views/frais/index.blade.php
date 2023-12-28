@@ -30,9 +30,10 @@
                                         <th>Type d'operation</th>
                                         <th>Intervalle</th>
                                         <th>Frais</th>
-                                        <th>Commission ELG</th>
-                                        <th>Commission UBA</th>
                                         <th>Commission Partenaire</th>
+                                        @foreach ($compteCommissions as $item)
+                                            <th>Commission {{$item->libelle}}</th>
+                                        @endforeach
                                         @if (hasPermission('frais.edit') || hasPermission('frais.delete'))
                                             <th>Actions</th>
                                         @endif
@@ -44,9 +45,10 @@
                                             <td class="text-capitalize">{{ $item->type_operation }}</td>
                                             <td>{{ $item->start }} - {{ $item->end }} F CFA</td>
                                             <td>{{ $item->value }} @if($item->type == 'pourcentage') % @else F CFA @endif</td>
-                                            <td>{{ $item->value_commission_elg }} @if($item->type_commission_elg == 'pourcentage') % @else F CFA @endif</td>
-                                            <td>{{ $item->value_commission_bank }} @if($item->type_commission_bank == 'pourcentage') % @else F CFA @endif</td>
                                             <td>{{ $item->value_commission_partenaire }} @if($item->type_commission_partenaire == 'pourcentage') % @else F CFA @endif</td>
+                                            @foreach ($compteCommissions as $item)
+                                                <td>{{ $item->value_commission_partenaire }} @if($item->type_commission_partenaire == 'pourcentage') % @else F CFA @endif</td>
+                                            @endforeach
                                             @if (hasPermission('frais.edit') || hasPermission('frais.delete'))
                                                 <td>
                                                     <div class="btn-group">
@@ -198,44 +200,10 @@
                                 <hr>
                                 
                                 <h5>Partage de commission sur les frais</h5>
-                                
+
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label for="">Type et valeur commission ELG</label>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <select class="form-control select2bs4" name="type_elg" style="width:100%">
-                                                    <option value="">Selectionner un type</option>
-                                                    <option value="fixe">Taux fixe</option>
-                                                    <option selected value="pourcentage">Taux pourcentage</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <input type="number" value="0" class="form-control" name="value_elg" placeholder="Valeur">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label for="">Type et valeur commission UBA</label>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <select class="form-control select2bs4" name="type_bank" style="width:100%">
-                                                    <option value="">Selectionner un type</option>
-                                                    <option value="fixe">Taux fixe</option>
-                                                    <option selected value="pourcentage">Taux pourcentage</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <input type="number" value="0" class="form-control" name="value_bank" placeholder="Valeur">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label for="">Type et valeur commission Partenaire</label>
+                                        <label for="">Type et valeur commission partenaire</label>
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <select class="form-control select2bs4" name="type_partenaire" style="width:100%">
@@ -250,6 +218,26 @@
                                         </div>
                                     </div>
                                 </div>
+                                @foreach ($compteCommissions as $item)
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="">Type et valeur commission {{ $item->libelle }}</label>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <select class="form-control select2bs4" name="type_{{ strtolower($item->libelle) }}" style="width:100%">
+                                                        <option value="">Selectionner un type</option>
+                                                        <option value="fixe">Taux fixe</option>
+                                                        <option selected value="pourcentage">Taux pourcentage</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <input type="number" value="0" class="form-control" name="value_{{ strtolower($item->libelle) }}" placeholder="Valeur">
+                                                    <input type="hidden" value="{{ $item->id }}" class="form-control" name="id_{{ strtolower($item->libelle) }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                         <div class="modal-footer">
