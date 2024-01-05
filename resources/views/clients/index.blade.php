@@ -38,9 +38,7 @@
                                         <th>Telephone</th>
                                         <th>Status</th>
                                         <th>Verification</th>
-                                        @if (hasPermission('client.edit') || hasPermission('client.delete') || hasPermission('client.details')|| hasPermission('client.activation')|| hasPermission('client.desactivation') || hasPermission('client.reset.password'))
-                                            <th>Actions</th>
-                                        @endif
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -50,41 +48,27 @@
                                             <td>{{ $item->username }}</td>
                                             <td>@if($item->status == 0) <span class="badge bg-danger">Inactif</span> @else <span class="badge bg-success">Actif</span> @endif</td>
                                             <td>@if($item->verification == 0) <span class="badge bg-danger">Non vérifié</span> @else <span class="badge bg-success">Vérifié</span> @endif</td>
-                                            @if (hasPermission('client.edit') || hasPermission('client.details') || hasPermission('client.delete')|| hasPermission('client.activation')|| hasPermission('client.desactivation')|| hasPermission('client.reset.password'))
-                                                <td>
-                                                    <div class="btn-group">
-                                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                            Actions
-                                                        </button>
-                                                        <div class="dropdown-menu">
-                                                            @if (hasPermission('client.details'))
-                                                                <a class="dropdown-item" href="/client/details/{{ $item->id }}"><i class="fa fa-eye"></i> Détails sur le compte</a>
-                                                            @endif
-                                                            @if(($item->verification != 1) && ($item->verification_step_one == 1 && $item->verification_step_two == 1 && $item->verification_step_three == 1))
-                                                                <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#validation-client-{{ $item->id }}"><i class="fa fa-check"></i>&nbsp;&nbsp;Valider / Rejeter </a>
-                                                            @endif
-                                                            @if (hasPermission('client.edit'))
-                                                                <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#edit-client-{{ $item->id }}"><i class="fa fa-edit"></i>&nbsp;&nbsp;Modifier les informations</a>
-                                                            @endif
-                                                            @if (hasPermission('client.reset.password'))
-                                                                <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#reset-password-client-{{ $item->id }}"><i class="fa fa-spinner"></i>&nbsp;&nbsp;Reinitialisater le mot de passe</a>
-                                                            @endif
-                                                            @if($item->status == 0)
-                                                                @if (hasPermission('client.activation'))
-                                                                    <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#activation-client-{{ $item->id }}"><i class="fa fa-check"></i>&nbsp;&nbsp;Activer le compte</a>
-                                                                @endif
-                                                            @else
-                                                                @if (hasPermission('client.desactivation'))
-                                                                    <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#desactivation-client-{{ $item->id }}"><i class="fa fa-times"></i>&nbsp;&nbsp;Désactiver le compte</a>
-                                                                @endif
-                                                            @endif
-                                                            @if (hasPermission('client.delete'))
-                                                                <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#del-client-{{ $item->id }}"><i class="fa fa-trash"></i>&nbsp;&nbsp;Supprimer le compte</a>
-                                                            @endif
-                                                        </div>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        Actions
+                                                    </button>
+                                                    <div class="dropdown-menu">
+                                                        <a class="dropdown-item" href="/client/details/{{ $item->id }}"><i class="fa fa-eye"></i> Détails sur le compte</a>
+                                                        @if(($item->verification != 1) && ($item->verification_step_one == 1 && $item->verification_step_two == 1 && $item->verification_step_three == 1))
+                                                            <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#validation-client-{{ $item->id }}"><i class="fa fa-check"></i>&nbsp;&nbsp;Valider / Rejeter </a>
+                                                        @endif
+                                                        <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#edit-client-{{ $item->id }}"><i class="fa fa-edit"></i>&nbsp;&nbsp;Modifier les informations</a>
+                                                        <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#reset-password-client-{{ $item->id }}"><i class="fa fa-spinner"></i>&nbsp;&nbsp;Reinitialisater le mot de passe</a>
+                                                        @if($item->status == 0)
+                                                            <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#activation-client-{{ $item->id }}"><i class="fa fa-check"></i>&nbsp;&nbsp;Activer le compte</a>
+                                                        @else
+                                                            <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#desactivation-client-{{ $item->id }}"><i class="fa fa-times"></i>&nbsp;&nbsp;Désactiver le compte</a>
+                                                        @endif
+                                                        <a class="dropdown-item" href="javascript:void(0)" data-toggle="modal" data-target="#del-client-{{ $item->id }}"><i class="fa fa-trash"></i>&nbsp;&nbsp;Supprimer le compte</a>
                                                     </div>
-                                                </td>
-                                            @endif
+                                                </div>
+                                            </td>
                                         </tr>
 
                                         <div class="modal fade" id="edit-client-{{ $item->id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel1">

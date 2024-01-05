@@ -14,9 +14,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
-                @if (hasPermission('roles.add'))
-                    <button type="button" class="btn waves-effect waves-light btn-primary" data-toggle="modal" data-target="#add-role">Ajouter des roles</button>
-                @endif
+                <button type="button" class="btn waves-effect waves-light btn-primary" data-toggle="modal" data-target="#add-role">Ajouter des roles</button>
                 <br>
                 <br>
                 <div class="card">
@@ -29,9 +27,7 @@
                                 <tr>
                                     <th>Role</th>
                                     <th>Permmisions</th>
-                                    @if (hasPermission('roles.edit') || hasPermission('roles.delete'))
-                                        <th>Actions</th>
-                                    @endif
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -40,7 +36,7 @@
                                         <td>{{ $item->libelle }}</td>
                                         <td>
                                             @foreach ($item->rolePermissions as $value)
-                                                <span class="badge" style="background: rgb(192, 188, 188)">{{ $value->permission->libelle }}</span>
+                                                <span class="badge" style="background: rgb(192, 188, 188)">{{ $value->permission ? $value->permission->libelle : 'oko' }}</span>
                                             @endforeach
                                         </td>
                                         @if (hasPermission('roles.edit') || hasPermission('roles.delete'))
@@ -157,6 +153,9 @@
                             <div class="div-permissions">
                                 <div class="form-group">
                                     <label for="">Permissions</label>
+                                    <br>
+                                    <label for=""><input type="checkbox" id="check-all" value="all"> Tout selectionner </label>
+                                    <br>
                                 </div>
                                 <div class="row">
                                     @foreach ($permissions as $value)
@@ -239,5 +238,15 @@
                 $('#form-edit-'+id).submit()
             }
         })
+            
+        $('#check-all').on('change',function(e){
+            e.preventDefault()
+            if($(this).is(":checked") == true){
+                $(".check-permissions").prop("checked", true );
+            }else{
+                $(".check-permissions").prop("checked", false );
+            }
+        })
+
     </script>
 @endsection

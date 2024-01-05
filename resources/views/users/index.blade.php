@@ -218,16 +218,16 @@
                     @csrf
                     <div class="modal-body">
                         <div class="form-group">  
-                            <label for="recipient-name" class="control-label">Nom de l'Utilisateur:</label>
-                            <input type="text" autocomplete="off" class="form-control" name="name">
+                            <label for="recipient-name" class="control-label">Nom :</label>
+                            <input type="text" required autocomplete="off" class="form-control" name="name">
                         </div>
                         <div class="form-group">  
-                            <label for="recipient-name" class="control-label">Prenom de l'utilisateur:</label>
-                            <input type="text" autocomplete="off" class="form-control" name="lastname">
+                            <label for="recipient-name" class="control-label">Prénom :</label>
+                            <input type="text" required autocomplete="off" class="form-control" name="lastname">
                         </div>
                         <div class="form-group">
-                            <label for="">Role</label>
-                            <select class="form-control select2bs4 type" name="role" id="" style="width:100%">
+                            <label for="">Role :</label>
+                            <select required class="form-control select2bs4 type" name="role" id="" style="width:100%">
                                 <option value="">Selectionner un role</option>
                                 @foreach ($roles as $item)
                                     <option value="{{ $item->id }}">{{ $item->libelle }}</option>
@@ -267,7 +267,10 @@
             "responsive": true,
             "lengthChange": false,
             "autoWidth": false,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+            "language": {
+                "search": "Rechercher:"
+            }
         }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         
         $('.select2bs4').select2({

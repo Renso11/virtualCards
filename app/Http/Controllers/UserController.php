@@ -7,7 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Ramsey\Uuid\Uuid;
 
 class UserController extends Controller
@@ -30,8 +30,8 @@ class UserController extends Controller
                 'id' => Uuid::uuid4()->toString(),
                 'name' => $request->name,
                 'lastname' => $request->lastname,
-                'username' => strtolower($request->name[0].''.explode(' ',$request->lastname)[0]),
-                'password' => Hash::make(12345678),
+                'username' => unaccent(strtolower($request->name[0].''.explode(' ',$request->lastname)[0])),
+                'password' => Hash::make("12345678"),
                 'role_id' => $request->role,
                 'status' => 1,
                 'deleted' => 0,
@@ -68,7 +68,7 @@ class UserController extends Controller
             $user->deleted = 1;
             $user->updated_at = Carbon::now();
             $user->save();
-            return back()->withSuccess("Supression effectuée avec succès");
+            return redirect(route('users'))->withSuccess("Supression effectuée avec succès");
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         }
@@ -112,7 +112,7 @@ class UserController extends Controller
     public function profileInformationsEdit(Request $request)
     {
         try{
-            $user = Auth::user();
+            $user = User::where('id',Auth::user()->id);
             $user->name = $request->name;
             $user->username = $request->username;
             $user->lastname = $request->lastname;
@@ -131,7 +131,7 @@ class UserController extends Controller
                 'password' => 'required|min:8'
             ]);
 
-            $user = Auth::user();
+            $user = User::where('id',Auth::user()->id);
             $user->password = Hash::make($request->password);
             $user->updated_at = Carbon::now();
             $user->save();

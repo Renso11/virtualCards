@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Client;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\UserClient;
-use App\Models\GtpRequest;
 use Illuminate\Support\Carbon;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
@@ -254,6 +253,7 @@ class TransfertController extends Controller
                     $transfert->solde_avant = $soldeAvant;
                     $transfert->solde_apres = $soldeApres;
                     $transfert->status = 'completed';
+                    $transfert->is_debited = 1;
                     $transfert->save();
                     
                     $message = 'Transfert de '.$request->montant.' vers la carte '.$request->customer_id.'.';   
@@ -265,6 +265,8 @@ class TransfertController extends Controller
                         Mail::to([$email,])->send(new MailAlerte($arr));
                     }
                 } catch (BadResponseException $e) {
+                    $transfert->is_debited = 1;
+                    $transfert->save();
                     $json = json_decode($e->getResponse()->getBody()->getContents());
                     $error = $json->title.'.'.$json->detail;
                     return sendError($error, [], 500);
@@ -324,6 +326,7 @@ class TransfertController extends Controller
                         $transfert->solde_avant = $soldeAvant;
                         $transfert->solde_apres = $soldeApres;
                         $transfert->status = 'completed';
+                        $transfert->is_debited = 1;
                         $transfert->save();
                          
                         $message = 'Transfert de '.$montant.' XOF vers la carte principale '.decryptData($receiverFirstCard->last_digits, $encrypt_Key).' de '. $receiver->name.' '.$receiver->lastname.'.';   
@@ -335,6 +338,8 @@ class TransfertController extends Controller
                             Mail::to([$email,])->send(new MailAlerte($arr));
                         }
                     } catch (BadResponseException $e) {
+                        $transfert->is_debited = 1;
+                        $transfert->save();
                         $json = json_decode($e->getResponse()->getBody()->getContents());
                         $error = $json->title.'.'.$json->detail;
                         return sendError($error, [], 500);
@@ -379,9 +384,12 @@ class TransfertController extends Controller
                         $transfert->solde_avant = $soldeAvant;
                         $transfert->solde_apres = $soldeApres;
                         $transfert->status = 'completed';
+                        $transfert->is_debited = 1;
                         $transfert->save();
             
                     } catch (BadResponseException $e) {
+                        $transfert->is_debited = 1;
+                        $transfert->save();
                         return sendError($e->getMessage(), [], 401);
                     }
                 }else{
@@ -418,7 +426,7 @@ class TransfertController extends Controller
                         $starttime = time();
 
                         while ($status == "PENDING") {
-                            $externalTransaction = $this->resultat_check_status_kkp($resultat->transactionId);
+                            $externalTransaction = resultat_check_status_kkp($resultat->transactionId);
                             if ($externalTransaction->status == "SUCCESS"){
                                 $reference_operateur = $externalTransaction->externalTransactionId;
                                 
@@ -427,10 +435,14 @@ class TransfertController extends Controller
                                 $transfert->solde_avant = $soldeAvant;
                                 $transfert->solde_apres = $soldeApres;
                                 $transfert->status = 'completed';
+                                $transfert->is_debited = 1;
                                 $transfert->save();
                                 $status = "SUCCESS";
                             }else if($externalTransaction->status == "FAILED") {
                                 $status = "FAILED";
+                                $transfert->status = 'failed';
+                                $transfert->is_debited = 1;
+                                $transfert->save();
                                 return sendError('Echec lors du paiement du transfert. Contacter notre service clientèle', [], 500);
                             }else{
                                 $now = time()-$starttime;
@@ -441,6 +453,8 @@ class TransfertController extends Controller
                             }
                         }
                     } catch (BadResponseException $e) {
+                        $transfert->is_debited = 1;
+                        $transfert->save();
                         return json_encode(['message' => $e->getMessage() , 'data' => []]);
                     }
                 }
@@ -696,7 +710,7 @@ class TransfertController extends Controller
                         $starttime = time();
 
                         while ($status == "PENDING") {
-                            $externalTransaction = $this->resultat_check_status_kkp($resultat->transactionId);
+                            $externalTransaction = resultat_check_status_kkp($resultat->transactionId);
                             if ($externalTransaction->status == "SUCCESS"){
                                 $reference_operateur = $externalTransaction->externalTransactionId;
                                 $soldeApres = $soldeAvant - $montantWithFee;
@@ -739,7 +753,6 @@ class TransfertController extends Controller
             return sendError($e->getMessage(), [], 500);
         };
     }
-    
 
     private function repartitionCommission($fraisOperation,$frais,$montant,$referenceBcb,$referenceGtp){
         if($fraisOperation){        

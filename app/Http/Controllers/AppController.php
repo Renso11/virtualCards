@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Service;
 use Ramsey\Uuid\Uuid;
 use App\Models\Info;
+use App\Models\kkiapayRecharge;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
@@ -62,7 +63,6 @@ class AppController extends Controller
         };
     }
 
-
     public function appPartenaire(Request $request){
         try {
             $services = Service::where('deleted',0)->where('type','partenaire')->get();
@@ -89,6 +89,31 @@ class AppController extends Controller
         }
     }
 
+    public function appAdmin(Request $request){
+        try {
+            $services = Service::where('deleted',0)->where('type','partenaire')->get();
+            return view('app.partenaire',compact('services'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        };
+    }
+    
+    public function serviceAdminAdd(Request $request){
+        try {
+            Service::create([
+                'id' => Uuid::uuid4()->toString(),
+                'type' => 'partenaire',
+                'slug' => Str::slug($request->libelle , "-"),
+                'status' => 1,
+                'deleted' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+            return back()->withSuccess('Module ajouté avec success');
+        } catch (\Exception $e) {
+            return  back()->withError($e->getMessage());
+        }
+    }
 
     public function serviceDelete(Request $request){
         try {
@@ -120,6 +145,23 @@ class AppController extends Controller
             $service->status = 0;
             $service->save();
             return back()->withSuccess('Desactivation effectuée avec success');
+
+        } catch (\Exception $e) {
+            return  back()->withError($e->getMessage());
+        };
+    }
+
+    public function rechargeKkp(Request $request){
+        try {
+            kkiapayRecharge::create([
+                'id' => Uuid::uuid4()->toString(),
+                'montant' => $request->montant,
+                'reference' => $request->reference,
+                'deleted' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+            return back()->withSuccess('Rechargement effectué avec success');
 
         } catch (\Exception $e) {
             return  back()->withError($e->getMessage());

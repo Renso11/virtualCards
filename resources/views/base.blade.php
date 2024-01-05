@@ -101,7 +101,7 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="/roles" class="nav-link @if (Route::currentRouteName() == 'permissions') active @endif">
+                                    <a href="/permissions" class="nav-link @if (Route::currentRouteName() == 'permissions') active @endif">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>
                                             Gestion des permissions
@@ -165,7 +165,7 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="/app/admin" class="nav-link @if (Route::currentRouteName() == 'app.admin') active @endif">
+                                    <a href="javascript:void(0)" class="nav-link @if (Route::currentRouteName() == 'app.admin') active @endif">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>
                                             Application Admin

@@ -20,17 +20,17 @@ class ValidatorController extends Controller
                 'password' => 'required',
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
 
             if (!$token = Auth::guard('apiValidator')->attempt($validator->validated())) {
-                return  $this->sendError('Identifiants incorrectes', [],401);
+                return  sendError('Identifiants incorrectes', [],401);
             }
             
             $user = auth('apiValidator')->user();
             
             if($user->status == 0){
-                return $this->sendError('Compte inactif', [], 401);
+                return sendError('Compte inactif', [], 401);
             }
 
 
@@ -39,10 +39,10 @@ class ValidatorController extends Controller
             $user->makeHidden(['password']);
             $resultat['user'] = $user;
 
-            return $this->sendResponse($resultat, 'Connexion réussie');
+            return sendResponse($resultat, 'Connexion réussie');
             
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -53,10 +53,10 @@ class ValidatorController extends Controller
             foreach($userClients as $userClient){
                 $userClient->kycClient;
             }
-            return $this->sendResponse($userClients, 'Liste');
+            return sendResponse($userClients, 'Liste');
             
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -70,10 +70,10 @@ class ValidatorController extends Controller
                 'libelle' => 'Pieces ou photo non valide',
             ]];
 
-            return $this->sendResponse($motifs, 'Liste');
+            return sendResponse($motifs, 'Liste');
             
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -95,10 +95,10 @@ class ValidatorController extends Controller
 
             $userClient->kycClient;
             
-            return $this->sendResponse($userClient, 'Connexion réussie');
+            return sendResponse($userClient, 'Connexion réussie');
             
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -130,10 +130,10 @@ class ValidatorController extends Controller
             /*if($userClient->kycClient->email){
                 Mail::to([$userClient->kycClient->email,])->send(new AlerteRejet(['motif' => $motif,'description' => $description]));
             }*/
-            return $this->sendResponse($userClient, 'Rejeté avec success');
+            return sendResponse($userClient, 'Rejeté avec success');
             
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 

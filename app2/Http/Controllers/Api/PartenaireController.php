@@ -6,19 +6,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Retrait;
 use App\Models\Depot;
-use App\Models\Seuil;
-use App\Models\Limit;
 use App\Models\Service;
-use App\Models\Role;
 use App\Models\Frai;
 use App\Models\Partenaire;
 use App\Models\UserClient;
-use App\Models\Permission;
 use App\Models\UserPartenaire;
 use App\Models\MouchardPartenaire;
 use App\Models\GtpRequest;
 use App\Models\PartnerWallet;
 use GuzzleHttp\Client;
+use App\Models\CompteCommission;
+use App\Models\CompteCommissionOperation;
 use App\Models\AccountCommission;
 use App\Models\AccountCommissionOperation;
 use App\Models\AccountDistribution;
@@ -27,18 +25,13 @@ use GuzzleHttp\Exception\BadResponseException;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use App\Mail\CodeValidationRetrait;
-use App\Models\Commission;
 use App\Mail\MailAlerte;
-use App\Mail\MailAlerteVerification;
 use App\Models\ApiPartenaireAccount;
 use App\Models\ApiPartenaireFee;
 use App\Models\ApiPartenaireTransaction;
-use App\Models\EntityAccountCommission;
-use App\Models\EntityAccountCommissionOperation;
 use App\Models\PartnerWalletWithdraw;
-use DB;
 use Illuminate\Support\Facades\Auth as Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Uuid;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -57,17 +50,17 @@ class PartenaireController extends Controller
                 'password' => 'required',
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
 
             if (! $token = Auth::guard('apiPartenaire')->attempt($validator->validated())) {
-                return  $this->sendError('Identifiants incorrectes', [],401);
+                return  sendError('Identifiants incorrectes', [],401);
             }
             
             $user = auth('apiPartenaire')->user();
             
             if($user->status == 0){
-                return $this->sendError('Ce compte est désactivé. Veuillez contactez le service clientèle', [], 401);
+                return sendError('Ce compte est désactivé. Veuillez contactez le service clientèle', [], 401);
             }
             $resultat['token'] = $this->createNewToken($token);
             $user->lastconnexion = date('d-M-Y H:i:s');
@@ -79,28 +72,28 @@ class PartenaireController extends Controller
             $resultat['user'] = $user;
             $resultat['services'] = $modules;
 
-            return $this->sendResponse($resultat, 'Connexion réussie');
+            return sendResponse($resultat, 'Connexion réussie');
             
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
     public function getFees(Request $request){
         try {            
             $fees = Frai::where('deleted',0)->get();
-            return $this->sendResponse($fees, 'fees.');
+            return sendResponse($fees, 'fees.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
     public function getServices(Request $request){
         try {            
             $modules = Service::where('deleted',0)->where('type','partenaire')->get();
-            return $this->sendResponse($modules, 'Modules.');
+            return sendResponse($modules, 'Modules.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -121,16 +114,16 @@ class PartenaireController extends Controller
             $user = UserPartenaire::where('id',$request->user_partner_id)->first();
 
             if(!$user){
-                return $this->sendError('L\'utilisateur n\'existe pas', [], 401);
+                return sendError('L\'utilisateur n\'existe pas', [], 401);
             }
             
 
             $user->pin = $request->pin;
             $user->save();
             $user->makeHidden(['password','pin']);
-            return $this->sendResponse($user, 'PIN configurer avec succes');
+            return sendResponse($user, 'PIN configurer avec succes');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -142,9 +135,9 @@ class PartenaireController extends Controller
             
             $data['distribution'] = $distribution;
             $data['commission'] = $commission;
-            return $this->sendResponse($data, 'Dashboard.');
+            return sendResponse($data, 'Dashboard.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -154,7 +147,7 @@ class PartenaireController extends Controller
             $resultat = [];
             if($user){
                 if($user->status == 0){
-                    return $this->sendError('Ce compte est désactivé.', [], 500);
+                    return sendError('Ce compte est désactivé.', [], 500);
                 }
                 $transactions = DB::select(DB::raw("SELECT libelle , montant , typeOperation , dateOperation , user , sens
                 FROM
@@ -178,12 +171,12 @@ class PartenaireController extends Controller
                 }
                 $resultat['utilisateur'] = $user;
                 $resultat['transactions'] = $transactions;
-                return $this->sendResponse($resultat, 'Informations récupérées avec succes.');
+                return sendResponse($resultat, 'Informations récupérées avec succes.');
             }else{
-                return $this->sendError('Cet utilisateur n\'exite pas dans la base', [], 500);
+                return sendError('Cet utilisateur n\'exite pas dans la base', [], 500);
             }
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -217,9 +210,9 @@ class PartenaireController extends Controller
             $transactions = array_merge($transactions, $partnerRetraits->toArray());
             krsort($transactions);
             $transactions = array_values($transactions);
-            return $this->sendResponse($transactions, 'transactions.');
+            return sendResponse($transactions, 'transactions.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -246,9 +239,9 @@ class PartenaireController extends Controller
             $transactions = array_merge($retraits->toArray(), $depots->toArray());
             krsort($transactions);
             $transactions = array_values($transactions);
-            return $this->sendResponse($transactions, 'transactions.');
+            return sendResponse($transactions, 'transactions.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -263,19 +256,9 @@ class PartenaireController extends Controller
                 $retrait->partenaire;
             }
 
-            /*$depots = Depot::select('id', 'libelle', 'montant', 'created_at')->where('partenaire_id',$partenaire->id)->where('status','pending')->where('deleted',0)->get();
-            foreach($depots as $depot){
-                $depot->type = 'depot';
-                $depot->partenaire;
-            }
-
-            $transactions = array_merge($retraits->toArray(), $depots->toArray());
-            krsort($transactions);
-            $transactions = array_values($transactions);*/
-
-            return $this->sendResponse($retraits, 'transactions.');
+            return sendResponse($retraits, 'transactions.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }    
 
@@ -296,131 +279,120 @@ class PartenaireController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
 
             $client = UserClient::where('username',$request->username)->where('deleted',0)->first();
 
             if(!$client){
-                return $this->sendError('Ce compte client n\'exite pas. Verifier le numero de telephone et recommencer');
+                return sendError('Ce compte client n\'exite pas. Verifier le numero de telephone et recommencer');
             }else{
                 if($client->status == 0){
-                    return $this->sendError('Ce compte client est inactif');
+                    return sendError('Ce compte client est inactif');
                 }
                 if($client->verification == 0){
-                    return $this->sendError('Ce compte client n\'est pas encore verifié');
+                    return sendError('Ce compte client n\'est pas encore verifié');
                 }
             }
             
             $card = $client->userCard->first();
             $userPartenaire = UserPartenaire::where('id',$request->user_partenaire_id)->first();
-
-            // Determination frais
-                $montant = $request->montant;
-
-                $fraisAndRepartition = getFeeAndRepartition('retrait', $montant);
-                $frais = 0;
-                if($fraisAndRepartition){
-                    if($fraisAndRepartition->type == 'pourcentage'){
-                        $frais = $montant * $fraisAndRepartition->value / 100;
-                    }else{
-                        $frais = $fraisAndRepartition->value;
-                    }
-                }
-
-                $montantWithFee = $montant + $frais;
-            // Fin determination frais
             
-            //verification solde client        
-                $clienthTTP = new Client();
-                $url = $base_url."accounts/".decryptData($card->customer_id, $encrypt_Key)."/balance";
+            $montant = $request->montant;
+
+            $fraisAndRepartition = getFeeAndRepartition('retrait', $montant);
+            $frais = 0;
+            if($fraisAndRepartition){
+                if($fraisAndRepartition->type == 'pourcentage'){
+                    $frais = $montant * $fraisAndRepartition->value / 100;
+                }else{
+                    $frais = $fraisAndRepartition->value;
+                }
+            }
+
+            $montantWithFee = $montant + $frais;
+                 
+            $clienthTTP = new Client();
+            $url = $base_url."accounts/".decryptData($card->customer_id, $encrypt_Key)."/balance";
+    
+            $headers = [
+                'programId' => $programID,
+                'requestId' => Uuid::uuid4()->toString(),
+            ];
+    
+            $auth = [
+                $authLogin,
+                $authPass
+            ];
         
-                $headers = [
-                    'programId' => $programID,
-                    'requestId' => Uuid::uuid4()->toString(),
-                ];
+            try {
+                $response = $clienthTTP->request('GET', $url, [
+                    'auth' => $auth,
+                    'headers' => $headers,
+                ]);
         
-                $auth = [
-                    $authLogin,
-                    $authPass
-                ];
+                $balance = json_decode($response->getBody());                    
             
-                try {
-                    $response = $clienthTTP->request('GET', $url, [
-                        'auth' => $auth,
-                        'headers' => $headers,
-                    ]);
-            
-                    $balance = json_decode($response->getBody());                    
-                
-                    if($balance->balance < $montantWithFee){
-                        return $this->sendError('Le solde du client ne suffit pas pour cet opération');
-                    }
-                } catch (BadResponseException $e) {
-                    $json = json_decode($e->getResponse()->getBody()->getContents());
-                    $error = $json->title.'.'.$json->detail;
-                    return  $this->sendError($error);
-                }  
-            // Fin verification solde du client
-
-            //traitement des restrictions
-                $isRestrictByAdmin = isRestrictByAdmin($montant,$client->id,$userPartenaire->partenaire->id,'retrait');
-
-                if($isRestrictByAdmin != 'ok'){
-                    return $this->sendError($isRestrictByAdmin);
+                if($balance->balance < $montantWithFee){
+                    return sendError('Le solde du client ne suffit pas pour cet opération');
                 }
-
-                $isRestrictByPartenaire = isRestrictByPartenaire($montant,$userPartenaire->partenaire->id,$userPartenaire->id,'retrait');
-
-                if($isRestrictByPartenaire != 'ok'){
-                    return $this->sendError($isRestrictByPartenaire);
-                }
-            // Fin traitement des restrictions
-
-            // Initiation du retrait
-                $retrait = Retrait::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'user_client_id' => $client->id,
-                    'partenaire_id' => $userPartenaire->partenaire->id,
-                    'user_partenaire_id' => $userPartenaire->id,
-                    'user_card_id' => $card->id,
-                    'libelle' => 'Retrait du compte BCV '.$client->username. ' chez le marchand ' .$userPartenaire->partenaire->libelle,
-                    'montant' => $montant,
-                    'frais_bcb' => $frais,
-                    'status' => 'pending',
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now()
-                ]);
-
-                MouchardPartenaire::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'libelle' => 'Retrait de '. $request->montant.' effectué sur le compte '. $client->username . ' de '.$client->lastname.' '.$client->name.'.',
-                    'user_partenaire_id' => $userPartenaire->id,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now()
-                ]);
-                
-                $message = "Un retrait de ". $montant ." xof à été initié sur votre compte BCV. Frais de retrait : ".$frais." XOF";
-                $this->sendSms($client->username,$message);
+            } catch (BadResponseException $e) {
+                $json = json_decode($e->getResponse()->getBody()->getContents());
+                $error = $json->title.'.'.$json->detail;
+                return  sendError($error);
+            }  
             
-            // Fin initiation du retrait avec validation 
+            $isRestrictByAdmin = isRestrictByAdmin($montant,$client->id,$userPartenaire->partenaire->id,'retrait');
 
-            return $this->sendResponse($retrait,'Retrait initié avec succes. Le client doit maintenant valider l\'opération', 'Success');
+            if($isRestrictByAdmin != 'ok'){
+                return sendError($isRestrictByAdmin);
+            }
+
+            $isRestrictByPartenaire = isRestrictByPartenaire($montant,$userPartenaire->partenaire->id,$userPartenaire->id,'retrait');
+
+            if($isRestrictByPartenaire != 'ok'){
+                return sendError($isRestrictByPartenaire);
+            }
+            
+            $retrait = Retrait::create([
+                'id' => Uuid::uuid4()->toString(),
+                'user_client_id' => $client->id,
+                'partenaire_id' => $userPartenaire->partenaire->id,
+                'user_partenaire_id' => $userPartenaire->id,
+                'user_card_id' => $card->id,
+                'libelle' => 'Retrait du compte BCV '.$client->username. ' chez le marchand ' .$userPartenaire->partenaire->libelle,
+                'montant' => $montant,
+                'frais_bcb' => $frais,
+                'status' => 'pending',
+                'deleted' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+
+            MouchardPartenaire::create([
+                'id' => Uuid::uuid4()->toString(),
+                'libelle' => 'Retrait de '. $request->montant.' effectué sur le compte '. $client->username . ' de '.$client->lastname.' '.$client->name.'.',
+                'user_partenaire_id' => $userPartenaire->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+            
+            $message = "Un retrait de ". $montant ." xof à été initié sur votre compte BCV. Frais de retrait : ".$frais." XOF";
+            sendSms($client->username,$message);
+
+            return sendResponse($retrait,'Retrait initié avec succes. Le client doit maintenant valider l\'opération', 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
     
     public function cancelClientWithdrawAsPartner(Request $request){
-        try {
-            $encrypt_Key = env('ENCRYPT_KEY');
-                
+        try {                
             $validator = Validator::make($request->all(), [
                 'transaction_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors()->first(), [],422);
+                return  sendError($validator->errors()->first(), [],422);
             }
 
             $token = JWTAuth::getToken();
@@ -432,133 +404,20 @@ class PartenaireController extends Controller
             $retrait = Retrait::where('id',$request->transaction_id)->where('deleted',0)->where('status','pending')->first();
 
             if($partenaire->id != $retrait->partenaire_id && $userId != $retrait->user_partenaire_id){
-                return  $this->sendError('Vous n\'etes pas autorisé à faire cette opération', [$userId,$retrait->user_client_id],401);
+                return  sendError('Vous n\'etes pas autorisé à faire cette opération', [$userId,$retrait->user_client_id],401);
             }
 
             $retrait->status = 'canceled';
             $retrait->deleted = 1;
             $retrait->save();
             
-            return $this->sendResponse($retrait, 'Succès');
+            return sendResponse($retrait, 'Succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
+    
 
-    public function completeWithdrawPartenaire(Request $request){
-        try {
-            $encrypt_Key = env('ENCRYPT_KEY');
-            $base_url = env('BASE_GTP_API');
-            $programID = env('PROGRAM_ID');
-            $authLogin = env('AUTH_LOGIN');
-            $authPass = env('AUTH_PASS');
-
-            $validator = Validator::make($request->all(), [
-                'transaction_id' => ["required" , "string"],
-                'user_partenaire_id' => ["required" , "string"]
-            ]);
-
-            if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
-            }
-
-            $client = UserClient::where('username',$request->username)->where('deleted',0)->first();
-            $card = $client->userCard->first();
-            $userPartenaire = UserPartenaire::where('id',$request->user_partenaire_id)->first();
-
-            if(!$client){
-                return $this->sendError('Ce compte client n\'exite pas. Verifier le numero de telephone et recommencer');
-            }else{
-                if($client->status == 0){
-                    return $this->sendError('Ce compte client est inactif');
-                }
-                if($client->verification == 0){
-                    return $this->sendError('Ce compte client n\'est pas encore verifié');
-                }
-            }
-
-            // Determination frais
-                $montant = $request->montant;
-
-                $fraisAndRepartition = getFeeAndRepartition('retrait', $montant);
-                $frais = 0;
-                if($fraisAndRepartition){
-                    if($fraisAndRepartition->type == 'pourcentage'){
-                        $frais = $montant * $fraisAndRepartition->value / 100;
-                    }else{
-                        $frais = $fraisAndRepartition->value;
-                    }
-                }
-
-                $montantWithFee = $montant + $frais;
-            // Fin determination frais
-            
-            //verification solde client        
-                $client = new Client();
-                $url = $base_url."accounts/".decryptData($card->customer_id, $encrypt_Key)."/balance";
-        
-                $headers = [
-                    'programId' => $programID,
-                    'requestId' => Uuid::uuid4()->toString(),
-                ];
-        
-                $auth = [
-                    $authLogin,
-                    $authPass
-                ];
-            
-                try {
-                    $response = $client->request('GET', $url, [
-                        'auth' => $auth,
-                        'headers' => $headers,
-                    ]);
-            
-                    $balance = json_decode($response->getBody());                    
-                
-                    if($balance->balance < $montantWithFee){
-                        return $this->sendError('Le solde du client ne suffit pas pour cet opération');
-                    }
-                } catch (BadResponseException $e) {
-                    $json = json_decode($e->getResponse()->getBody()->getContents());
-                    $error = $json->title.'.'.$json->detail;
-                    return  $this->sendError($error);
-                }  
-            // Fin verification solde du client
-
-            // Initiation du retrait
-                $retrait = Retrait::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'user_client_id' => $client->id,
-                    'partenaire_id' => $userPartenaire->partenaire->id,
-                    'user_partenaire_id' => $userPartenaire->id,
-                    'user_card_id' => $card->id,
-                    'libelle' => 'Retrait du compte BCV '.$client->username. ' chez le marchand ' .$userPartenaire->partenaire->libelle,
-                    'montant' => $montant,
-                    'frais_bcb' => $frais,
-                    'status' => 'pending',
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now()
-                ]);
-
-                MouchardPartenaire::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'libelle' => 'Retrait de '. $request->montant.' effectué sur le compte '. $client->username . ' de '.$client->lastname.' '.$client->name.'.',
-                    'user_partenaire_id' => $userPartenaire->id,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now()
-                ]);
-                
-                $message = "Un retrait de ". $montant ." xof à été initié sur votre compte BCV. Frais de retrait : ".$frais." XOF";
-                $this->sendSms($client->username,$message);
-            
-            // Fin initiation du retrait avec validation 
-
-            return $this->sendResponse($retrait,'Retrait initié avec succes. Le retrait doit maintenant valider l\'opération', 'Success');
-        } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
-        };
-    }
 
     public function addDepotPartenaire(Request $request){
         $encrypt_Key = env('ENCRYPT_KEY');
@@ -574,18 +433,18 @@ class PartenaireController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return  $this->sendError($validator->errors(), [],422);
+            return  sendError($validator->errors(), [],422);
         }
 
         $client = UserClient::where('username',$request->username)->where('deleted',0)->first();
         if(!$client){
-            return $this->sendError('Ce compte client n\'exite pas. Verifier le numero de telephone et recommencer');
+            return sendError('Ce compte client n\'exite pas. Verifier le numero de telephone et recommencer');
         }else{
             if($client->status == 0){
-                return $this->sendError('Ce compte client est inactif');
+                return sendError('Ce compte client est inactif');
             }
             if($client->verification == 0){
-                return $this->sendError('Ce compte client n\'est pas encore verifié');
+                return sendError('Ce compte client n\'est pas encore verifié');
             }
         }
 
@@ -594,72 +453,204 @@ class PartenaireController extends Controller
         
         $distribution_account = AccountDistribution::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
 
-
-        // Determination frais
-            $montant = $request->montant;
-
-            $fraisAndRepartition = getFeeAndRepartition('depot', $montant);
-            $frais = 0;
-            if($fraisAndRepartition){
-                if($fraisAndRepartition->type == 'pourcentage'){
-                    $frais = $montant * $fraisAndRepartition->value / 100;
-                }else{
-                    $frais = $fraisAndRepartition->value;
-                }
+        $montant = $request->montant;
+        $fraisAndRepartition = getFeeAndRepartition('depot', $montant);
+        $frais = 0;
+        if($fraisAndRepartition){
+            if($fraisAndRepartition->type == 'pourcentage'){
+                $frais = $montant * $fraisAndRepartition->value / 100;
+            }else{
+                $frais = $fraisAndRepartition->value;
             }
-
-            $montantWithoutFee = $montant - $frais;
-            
-            if($distribution_account->solde < $montantWithoutFee){
-                return $this->sendError('Votre solde ne suffit pas pour cette opération');
-            }
-        // Fin determination frais
-            
-        // verification solde du partenaire   
-            $compte = $userPartenaire->partenaire->accountDistribution;
-
-            if($compte->solde < $montant){
-                return $this->sendError('Votre solde ne suffit pas pour cette opération');
-            }
-        // Fin verification solde du client
+        }
+        $montantWithoutFee = $montant - $frais;
         
-        // Initiation du depot 
-            $referenceBcb = 'ret-'.Uuid::uuid4()->toString();
+        if($distribution_account->solde < $montantWithoutFee){
+            return sendError('Votre solde ne suffit pas pour cette opération');
+        }
+             
+        $compte = $userPartenaire->partenaire->accountDistribution;
+
+        if($compte->solde < $montant){
+            return sendError('Votre solde ne suffit pas pour cette opération');
+        }
+
+        $referenceBcb = 'ret-'.Uuid::uuid4()->toString();
+        
+        $depot = Depot::create([
+            'id' => Uuid::uuid4()->toString(),
+            'user_client_id' => $client->id,
+            'user_partenaire_id' => $userPartenaire->id,
+            'partenaire_id' => $userPartenaire->partenaire->id,
+            'libelle' => 'Depot du compte BCV '.$client->username. ' chez le marchand ' .$userPartenaire->partenaire->libelle,
+            'montant' => $montant,
+            'reference_bcb'=> $referenceBcb,
+            'frais_bcb' => $frais,
+            'status' => 'pending',
+            'deleted' => 0,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
+        ]);
+
+        MouchardPartenaire::create([
+            'id' => Uuid::uuid4()->toString(),
+            'libelle' => 'Initiation d\'un depot de '. $montant.' XOF effectué sur le compte BCV '. $client->username . ' de '.$client->lastname.' '.$client->name.'.',
+            'user_partenaire_id' => $userPartenaire->id,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
+        ]);
+
+        $referenceBcb = 'ret-'.Uuid::uuid4()->toString();
+        $comptePartenaire = AccountDistribution::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
+
+        $soldeAvDecr = $comptePartenaire->solde;
+        $soldeApDecr = $comptePartenaire->solde - $montant;
+
+        $distribution_account_operation = AccountDistributionOperation::create([
+            'id' => Uuid::uuid4()->toString(),
+            'reference_bcb' => $referenceBcb,
+            'solde_avant' => $soldeAvDecr,
+            'montant' => $montant,
+            'solde_apres' => $soldeApDecr,
+            'libelle' => 'Depot de '. $montant .' XOF effectué sur le compte '.$client->username.'.',
+            'type' => 'debit',
+            'account_distribution_id' => $comptePartenaire->id,
+            'deleted' => 0,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+        
+        $comptePartenaire->solde -= $montant;
+        $comptePartenaire->save();
+
+        $depot->partner_is_debited == 1;
+        $depot->save();
+        
+        try{
+            $clientHttp = new Client();
+            $url = $base_url."accounts/".decryptData((string)$card->customer_id,$encrypt_Key)."/transactions";
             
-            $depot = Depot::create([
-                'id' => Uuid::uuid4()->toString(),
-                'user_client_id' => $client->id,
-                'user_partenaire_id' => $userPartenaire->id,
-                'partenaire_id' => $userPartenaire->partenaire->id,
-                'libelle' => 'Depot du compte BCV '.$client->username. ' chez le marchand ' .$userPartenaire->partenaire->libelle,
-                'montant' => $montant,
-                'reference_bcb'=> $referenceBcb,
-                'frais' => $frais,
-                'status' => 'pending',
-                'deleted' => 0,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]);
+            $body = [
+                "transferType" => "WalletToCard",
+                "transferAmount" => round($montantWithoutFee,2),
+                "currencyCode" => "XOF",
+                "referenceMemo" => "Depot de ".$montantWithoutFee." XOF sur votre carte XOF.",
+                "last4Digits" => decryptData((string)$card->last_digits,$encrypt_Key)
+            ];
 
-            MouchardPartenaire::create([
-                'id' => Uuid::uuid4()->toString(),
-                'libelle' => 'Initiation d\'un depot de '. $montant.' XOF effectué sur le compte BCV '. $client->username . ' de '.$client->lastname.' '.$client->name.'.',
-                'user_partenaire_id' => $userPartenaire->id,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]);
-        // Fin initiation du depot
+            $body = json_encode($body);
+            
+            $headers = [
+                'programId' => $programID,
+                'requestId' => Uuid::uuid4()->toString(),
+                'Content-Type' => 'application/json', 'Accept' => 'application/json'
+            ];
+        
+            $auth = [
+                $authLogin,
+                $authPass
+            ];
 
-        // Décrémentation du compte de distribution
-            $referenceBcb = 'ret-'.Uuid::uuid4()->toString();
+            try {
+                $response = $clientHttp->request('POST', $url, [
+                    'auth' => $auth,
+                    'headers' => $headers,
+                    'body' => $body,
+                    'verify'  => false,
+                ]);
+            
+                $responseBody = json_decode($response->getBody());
+
+                $referenceGtp = $responseBody->transactionId;
+                
+                $soldeAvantRetrait = getUserSolde($client->id);
+                $soldeApresRetrait = $soldeAvantRetrait + $montantWithoutFee;
+
+                $depot->reference_gtp = $referenceGtp;
+                $depot->montant_recu = $montantWithoutFee;
+                $depot->solde_avant = $soldeAvantRetrait;
+                $depot->solde_apres = $soldeApresRetrait;
+                $depot->save();
+
+                $distribution_account_operation->reference_gtp = $referenceGtp;
+                $distribution_account_operation->save();
+
+                
+                $compteCommissionPartenaire = AccountCommission::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
+                $this->repartitionCommission($compteCommissionPartenaire,$comptePartenaire,$fraisAndRepartition,$frais,$montant,$referenceBcb,$referenceGtp);
+                
+                $depot->status = 'completed';
+                $depot->save();
+
+                $message = "Depot de ".$montant." XOF sur votre carte ". decryptData((string)$card->customer_id,$encrypt_Key)." Frais de retrait : ".$frais." XOF. Montant reçu : ".$montantWithoutFee." XOF";
+                if($client->sms == 1){
+                    sendSms($client->username,$message);
+                }else{
+                    $arr = ['messages'=> $message,'objet'=>'Confirmation du depot','from'=>'noreply-bcv@bestcash.me'];
+                    Mail::to([$client->kycClient->email,])->send(new MailAlerte($arr));
+                }
+                
+                $message = 'Depot effectué à '.$client->name.' '.$client->lastname.'.';
+                sendSms($depot->partenaire->telephone,$message);
+            } catch (BadResponseException $e) {
+                $json = json_decode($e->getResponse()->getBody()->getContents());
+                $error = $json->title.'.'.$json->detail;
+                return sendError($error, [], 500);
+            }
+            return sendResponse($depot, 'Succès');
+        }catch (\Exception $e) {
+            return sendError($e->getMessage());
+        }  
+    }
+
+    public function completeDepotPartenaire(Request $request){
+        $encrypt_Key = env('ENCRYPT_KEY');
+        $base_url = env('BASE_GTP_API');
+        $programID = env('PROGRAM_ID');
+        $authLogin = env('AUTH_LOGIN');
+        $authPass = env('AUTH_PASS');
+        
+        $validator = Validator::make($request->all(), [
+            'transaction_id' => ["required" , "string"],
+            'user_partenaire_id' => ["required" , "string"]
+        ]);
+
+        if ($validator->fails()) {
+            return  sendError($validator->errors(), [],422);
+        }
+
+        $referenceBcb = 'ret-'.Uuid::uuid4()->toString();
+        $userPartenaire = UserPartenaire::where('id',$request->user_partenaire_id)->first();
+        $depot = Depot::where('id',$request->transaction_id)->first();
+        $card = $depot->userClient->userCard->first();
+        $client = $depot->userClient;
+        
+        $montant = $depot->montant;
+        $fraisAndRepartition = getFeeAndRepartition('depot', $montant);
+        $frais = 0;
+        if($fraisAndRepartition){
+            if($fraisAndRepartition->type == 'pourcentage'){
+                $frais = $montant * $fraisAndRepartition->value / 100;
+            }else{
+                $frais = $fraisAndRepartition->value;
+            }
+        }
+        $montantWithoutFee = $montant - $frais;
+            
+        $compte = $userPartenaire->partenaire->accountDistribution;
+
+        if($compte->solde < $montant){
+            return sendError('Votre solde ne suffit pas pour cette opération');
+        }
+
+        if($depot->partner_is_debited == 0 || $depot->partner_is_debited == null){
             $comptePartenaire = AccountDistribution::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
 
             $soldeAvDecr = $comptePartenaire->solde;
             $soldeApDecr = $comptePartenaire->solde - $montant;
 
-            $distribution_account_operation = AccountDistributionOperation::create([
+            AccountDistributionOperation::create([
                 'id' => Uuid::uuid4()->toString(),
-                'reference_bcb' => $referenceBcb,
                 'solde_avant' => $soldeAvDecr,
                 'montant' => $montant,
                 'solde_apres' => $soldeApDecr,
@@ -676,10 +667,9 @@ class PartenaireController extends Controller
 
             $depot->partner_is_debited == 1;
             $depot->save();
-
-        // Fin décrémentation du compte de distribution 
-
-        // Realisation du depot
+        }
+        
+        if($depot->reference_gtp == null){
             try{
                 $clientHttp = new Client();
                 $url = $base_url."accounts/".decryptData((string)$card->customer_id,$encrypt_Key)."/transactions";
@@ -688,7 +678,7 @@ class PartenaireController extends Controller
                     "transferType" => "WalletToCard",
                     "transferAmount" => round($montantWithoutFee,2),
                     "currencyCode" => "XOF",
-                    "referenceMemo" => "Depot de ".$montantWithoutFee." XOF sur votre carte XOF.",
+                    "referenceMemo" => "Depot de ".$montant." XOF sur votre carte ". decryptData((string)$card->customer_id,$encrypt_Key)." Frais de retrait : ".$frais." XOF. Montant reçu : ".$montantWithoutFee." XOF.",
                     "last4Digits" => decryptData((string)$card->last_digits,$encrypt_Key)
                 ];
 
@@ -721,351 +711,38 @@ class PartenaireController extends Controller
                     $soldeApresRetrait = $soldeAvantRetrait + $montantWithoutFee;
 
                     $depot->reference_gtp = $referenceGtp;
+                    $depot->status = 'completed';
                     $depot->montant_recu = $montantWithoutFee;
                     $depot->solde_avant = $soldeAvantRetrait;
                     $depot->solde_apres = $soldeApresRetrait;
                     $depot->save();
 
-                    $distribution_account_operation->reference_gtp = $referenceGtp;
-                    $distribution_account_operation->save();
-
                     
-                
-                    $compteUba = EntityAccountCommission::where('libelle','UBA')->where('deleted',0)->first();
-                    $compteElg = EntityAccountCommission::where('libelle','ELG')->where('deleted',0)->first();
+            
                     $compteCommissionPartenaire = AccountCommission::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
-
-                    if($fraisAndRepartition){
-                        if($fraisAndRepartition->type_commission_elg == 'pourcentage'){
-                            $commissionElg = $frais * $fraisAndRepartition->value_commission_elg / 100;
-                        }else{
-                            $commissionElg = $fraisAndRepartition->value_commission_elg;
-                        }
-
-                        if($fraisAndRepartition->type_commission_bank == 'pourcentage'){
-                            $commissionBank = $frais * $fraisAndRepartition->value_commission_bank / 100;
-                        }else{
-                            $commissionBank = $fraisAndRepartition->value_commission_bank;
-                        }
-
-                        if($fraisAndRepartition->type_commission_partenaire == 'pourcentage'){
-                            $commissionPartenaire = $frais * $fraisAndRepartition->value_commission_partenaire / 100;
-                        }else{
-                            $commissionPartenaire = $fraisAndRepartition->value_commission_partenaire;
-                        }
-
-                        $compteElg->solde += $commissionElg;
-                        $compteElg->save();
-
-                        $compteUba->solde += $commissionBank;
-                        $compteUba->save();
-
-                        EntityAccountCommissionOperation::insert([
-                            [
-                                'id' => Uuid::uuid4()->toString(),
-                                'entity_account_commission_id'=> $compteUba->id,
-                                'type_operation'=>'self_retrait',
-                                'montant'=> $montant,
-                                'frais'=> $frais,
-                                'commission'=> $commissionBank,
-                                'reference_bcb'=> $referenceBcb,
-                                'reference_gtp'=> $referenceGtp,
-                                'status'=> 0,
-                                'deleted'=> 0,
-                                'created_at' => Carbon::now(),
-                                'updated_at' => Carbon::now()                
-                            ],
-                            [
-                                'id' => Uuid::uuid4()->toString(),
-                                'entity_account_commission_id'=> $compteElg->id,
-                                'type_operation'=>'self_retrait',
-                                'montant'=> $montant,
-                                'frais'=> $frais,
-                                'commission'=> $commissionElg,
-                                'reference_bcb'=> $referenceBcb,
-                                'reference_gtp'=> $referenceGtp,
-                                'status'=> 0,
-                                'deleted'=> 0,
-                                'created_at' => Carbon::now(),
-                                'updated_at' => Carbon::now()
-                            ]
-                        ]);
-
-                        $soldeAvIncr = $compteCommissionPartenaire->solde;
-                        $compteCommissionPartenaire->solde += $commissionPartenaire;
-                        $compteCommissionPartenaire->save();
-                        
-                        $soldeApIncr = $comptePartenaire->solde + $commissionPartenaire;
-
-                        AccountCommissionOperation::insert([
-                            'id' => Uuid::uuid4()->toString(),
-                            'reference_bcb'=> $referenceBcb,
-                            'reference_gtp'=> $referenceGtp,
-                            'solde_avant' => $soldeAvIncr,
-                            'montant' => $commissionPartenaire,
-                            'solde_apres' => $soldeApIncr,
-                            'libelle' => 'Commission sur depot',
-                            'type' => 'credit',
-                            'account_commission_id' => $compteCommissionPartenaire->id,
-                            'deleted' => 0,
-                            'created_at' => Carbon::now(),
-                            'updated_at' => Carbon::now(),            
-                        ]);
-                    }
-                    
-                    $depot->status = 'completed';
-                    $depot->save();
+                    $this->repartitionCommission($compteCommissionPartenaire,$comptePartenaire,$fraisAndRepartition,$frais,$montant,$referenceBcb,$referenceGtp);
 
                     $message = "Depot de ".$montant." XOF sur votre carte ". decryptData((string)$card->customer_id,$encrypt_Key)." Frais de retrait : ".$frais." XOF. Montant reçu : ".$montantWithoutFee." XOF";
                     if($client->sms == 1){
-                        $this->sendSms($client->username,$message);
+                        sendSms($client->username,$message);
                     }else{
                         $arr = ['messages'=> $message,'objet'=>'Confirmation du depot','from'=>'noreply-bcv@bestcash.me'];
                         Mail::to([$client->kycClient->email,])->send(new MailAlerte($arr));
                     }
                     
-                    $message = 'Depot effectué à '.$client->name.' '.$client->lastname.'. Commission de l\'operation : '.$commissionPartenaire.' XOF.';
-                    $this->sendSms($depot->partenaire->telephone,$message);
+                    $message = 'Depot effectué à '.$client->name.' '.$client->lastname.'.';
+                    sendSms($depot->partenaire->telephone,$message);
+
                 } catch (BadResponseException $e) {
                     $json = json_decode($e->getResponse()->getBody()->getContents());
                     $error = $json->title.'.'.$json->detail;
-                    return $this->sendError($error, [], 500);
+                    return sendError($error, [], 500);
                 }
-                return $this->sendResponse($depot, 'Succès');
             }catch (\Exception $e) {
-                return $this->sendError($e->getMessage());
+                return sendError($e->getMessage());
             }  
-
-        // Fin realisation du depot
-              
-        // Fin initiation du retrait avec validation 
-    }
-
-    public function completeDepotPartenaire(Request $request){
-        $encrypt_Key = env('ENCRYPT_KEY');
-        $base_url = env('BASE_GTP_API');
-        $programID = env('PROGRAM_ID');
-        $authLogin = env('AUTH_LOGIN');
-        $authPass = env('AUTH_PASS');
-        
-        $validator = Validator::make($request->all(), [
-            'transaction_id' => ["required" , "string"],
-            'user_partenaire_id' => ["required" , "string"]
-        ]);
-
-        if ($validator->fails()) {
-            return  $this->sendError($validator->errors(), [],422);
         }
-
-        $card = $client->userCard->first();
-        $userPartenaire = UserPartenaire::where('id',$request->user_partenaire_id)->first();
-        $depot = Retrait::where('id',$request->transaction_id)->first();
-
-        $montant = (int)$depot->montant;
-        $frais = (int)$depot->frais;
-        $montantWithoutFee = $montant - $frais;
-        
-        $distribution_account = AccountDistribution::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
-            
-        // verification solde du partenaire
-            $compte = $userPartenaire->partenaire->accountDistribution;
-
-            if($compte->solde < $montant){
-                return $this->sendError('Votre solde ne suffit pas pour cette opération');
-            }
-        // Fin verification solde du client
-
-        if($depot->partner_is_debited == 0 || $depot->partner_is_debited == null){
-            
-            // Décrémentation du compte de distribution
-                $comptePartenaire = AccountDistribution::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
-
-                $soldeAvDecr = $comptePartenaire->solde;
-                $soldeApDecr = $comptePartenaire->solde - $montant;
-
-                $distribution_account_operation = AccountDistributionOperation::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'reference_bcb' => $referenceBcb,
-                    'reference_gtp'=> $referenceGtp,
-                    'solde_avant' => $soldeAvDecr,
-                    'montant' => $montant,
-                    'solde_apres' => $soldeApDecr,
-                    'libelle' => 'Depot de '. $montant .' XOF effectué sur le compte '.$client->username.'.',
-                    'type' => 'debit',
-                    'account_distribution_id' => $comptePartenaire->id,
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
-                
-                $comptePartenaire->solde -= $montant;
-                $comptePartenaire->save();
-
-                $depot->partner_is_debited == 1;
-                $depot->save();
-
-            // Fin décrémentation du compte de distribution
-        }
-        
-        if($depot->reference_gtp == null){
-            
-            // Realisation du depot
-                try{
-                    $client = new Client();
-                    $url = $base_url."accounts/".decryptData((string)$card->customer_id,$encrypt_Key)."/transactions";
-                    
-                    $body = [
-                        "transferType" => "WalletToCard",
-                        "transferAmount" => round($montantWithoutFee,2),
-                        "currencyCode" => "XOF",
-                        "referenceMemo" => "Depot de ".$montant." XOF sur votre carte ". decryptData((string)$card->customer_id,$encrypt_Key)." Frais de retrait : ".$frais." XOF. Montant reçu : ".$montantWithoutFee." XOF.",
-                        "last4Digits" => decryptData((string)$card->last_digits,$encrypt_Key)
-                    ];
-
-                    $body = json_encode($body);
-                    
-                    $headers = [
-                        'programId' => $programID,
-                        'requestId' => Uuid::uuid4()->toString(),
-                        'Content-Type' => 'application/json', 'Accept' => 'application/json'
-                    ];
-                
-                    $auth = [
-                        $authLogin,
-                        $authPass
-                    ];
-
-                    try {
-                        $response = $client->request('POST', $url, [
-                            'auth' => $auth,
-                            'headers' => $headers,
-                            'body' => $body,
-                            'verify'  => false,
-                        ]);
-                    
-                        $responseBody = json_decode($response->getBody());
-
-                        $referenceGtp = $responseBody->transactionId;
-                        
-                        $soldeAvantRetrait = getUserSolde($client->id);
-                        $soldeApresRetrait = $soldeAvantRetrait + $montantWithoutFee;
-
-                        $depot->reference_gtp = $referenceGtp;
-                        $depot->status = 'completed';
-                        $depot->montant_recu = $montantWithoutFee;
-                        $depot->solde_avant = $soldeAvantRetrait;
-                        $depot->solde_apres = $soldeApresRetrait;
-                        $depot->save();
-
-                        $message = "Depot de ".$montant." XOF sur votre carte ". decryptData((string)$card->customer_id,$encrypt_Key)." Frais de retrait : ".$frais." XOF. Montant reçu : ".$montantWithoutFee." XOF";
-                        if($client->sms == 1){
-                            $this->sendSms($client->username,$message);
-                        }else{
-                            $arr = ['messages'=> $message,'objet'=>'Confirmation du depot','from'=>'noreply-bcv@bestcash.me'];
-                            Mail::to([$client->kycClient->email,])->send(new MailAlerte($arr));
-                        }
-                        
-                        $message = 'Depot effectué à '.$client->name.' '.$client->lastname.'. Commission de l\'operation : '.$commissionPartenaire.' XOF.';
-                        $this->sendSms($depot->partenaire->telephone,$message);
-
-                    } catch (BadResponseException $e) {
-                        $json = json_decode($e->getResponse()->getBody()->getContents());
-                        $error = $json->title.'.'.$json->detail;
-                        return $this->sendError($error, [], 500);
-                    }
-                }catch (\Exception $e) {
-                    return $this->sendError($e->getMessage());
-                }  
-
-            // Fin realisation du depot
-        }
-            
-        // Repartition des frais
-                
-            $compteUba = EntityAccountCommission::where('libelle','UBA')->where('deleted',0)->first();
-            $compteElg = EntityAccountCommission::where('libelle','ELG')->where('deleted',0)->first();
-            $compteCommissionPartenaire = AccountCommission::where('partenaire_id',$userPartenaire->partenaire->id)->where('deleted',0)->first();
-
-            if($fraisAndRepartition){
-                if($fraisAndRepartition->type_commission_elg == 'pourcentage'){
-                    $commissionElg = $frais * $fraisAndRepartition->value_commission_elg / 100;
-                }else{
-                    $commissionElg = $fraisAndRepartition->value_commission_elg;
-                }
-
-                if($fraisAndRepartition->type_commission_bank == 'pourcentage'){
-                    $commissionBank = $frais * $fraisAndRepartition->value_commission_bank / 100;
-                }else{
-                    $commissionBank = $fraisAndRepartition->value_commission_bank;
-                }
-
-                if($fraisAndRepartition->type_commission_partenaire == 'pourcentage'){
-                    $commissionPartenaire = $frais * $fraisAndRepartition->value_commission_partenaire / 100;
-                }else{
-                    $commissionPartenaire = $fraisAndRepartition->value_commission_partenaire;
-                }
-
-                $compteElg->solde += $commissionElg;
-                $compteElg->save();
-
-                $compteUba->solde += $commissionBank;
-                $compteUba->save();
-
-                EntityAccountCommissionOperation::insert([
-                    [
-                        'id' => Uuid::uuid4()->toString(),
-                        'entity_account_commission_id'=> $compteUba->id,
-                        'type_operation'=>'self_retrait',
-                        'montant'=> $montant,
-                        'frais'=> $frais,
-                        'commission'=> $commissionBank,
-                        'reference_bcb'=> $referenceBcb,
-                        'reference_gtp'=> $referenceGtp,
-                        'status'=> 0,
-                        'deleted'=> 0,
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now()                
-                    ],
-                    [
-                        'id' => Uuid::uuid4()->toString(),
-                        'entity_account_commission_id'=> $compteElg->id,
-                        'type_operation'=>'self_retrait',
-                        'montant'=> $montant,
-                        'frais'=> $frais,
-                        'commission'=> $commissionElg,
-                        'reference_bcb'=> $referenceBcb,
-                        'reference_gtp'=> $referenceGtp,
-                        'status'=> 0,
-                        'deleted'=> 0,
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now()
-                    ]
-                ]);
-
-                $soldeAvIncr = $compteCommissionPartenaire->solde;
-                $compteCommissionPartenaire->solde += $commissionPartenaire;
-                $compteCommissionPartenaire->save();
-                
-                $soldeApIncr = $comptePartenaire->solde + $commissionPartenaire;
-
-                AccountCommissionOperation::insert([
-                    'id' => Uuid::uuid4()->toString(),
-                    'reference_bcb'=> $referenceBcb,
-                    'reference_gtp'=> $referenceGtp,
-                    'solde_avant' => $soldeAvIncr,
-                    'montant' => $commissionPartenaire,
-                    'solde_apres' => $soldeApIncr,
-                    'libelle' => 'Commission sur depot',
-                    'type' => 'credit',
-                    'account_commission_id' => $compteCommissionPartenaire->id,
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),            
-                ]);
-            }
-                
-              
-        // Fin repartition des frais
+        return sendResponse($depot, 'Succès');
     }
 
 
@@ -1074,9 +751,9 @@ class PartenaireController extends Controller
     public function getPartnerWallets(Request $request){
         try {
             $wallets = PartnerWallet::where('partenaire_id',$request->partnerId)->where('deleted',0)->get();
-            return $this->sendResponse($wallets, 'Success');
+            return sendResponse($wallets, 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1091,7 +768,7 @@ class PartenaireController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors()->first(), [],422);
+                return  sendError($validator->errors()->first(), [],422);
             }
 
             $userPartenaire = UserPartenaire::where('id',$request->user_partenaire_id)->first();
@@ -1110,9 +787,9 @@ class PartenaireController extends Controller
                 'updated_at' => Carbon::now()
             ]);
 
-            return $this->sendResponse($wallet, 'Success');
+            return sendResponse($wallet, 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1127,13 +804,13 @@ class PartenaireController extends Controller
             ]);
             
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors()->first(), [],422);
+                return  sendError($validator->errors()->first(), [],422);
             }
 
             $wallet = PartnerWallet::where('id',$request->walletId)->first();
 
             if(!$wallet){
-                return $this->sendError('Portefeuille non trouvé', [], 401);
+                return sendError('Portefeuille non trouvé', [], 401);
             }
 
             $wallet->phone_code = $request->phone_code;
@@ -1142,9 +819,9 @@ class PartenaireController extends Controller
             $wallet->last_digits = $request->last_digits;
             $wallet->save();
 
-            return $this->sendResponse($wallet, 'Success');
+            return sendResponse($wallet, 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1153,19 +830,17 @@ class PartenaireController extends Controller
             $wallet = PartnerWallet::where('id',$request->walletId)->first();
 
             if(!$wallet){
-                return $this->sendError('Portefeuille non trouvé', [], 401);
+                return sendError('Portefeuille non trouvé', [], 401);
             }
 
             $wallet->deleted = 1;
             $wallet->save();
 
-            return $this->sendResponse($wallet, 'Success');
+            return sendResponse($wallet, 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
-
-    
 
     public function withdrawPartnerToWallet(Request $request){
         try {
@@ -1280,13 +955,13 @@ class PartenaireController extends Controller
                     } catch (BadResponseException $e) {
                         $json = json_decode($e->getResponse()->getBody()->getContents());
                         $error = $json->title.'.'.$json->detail;
-                        return $this->sendError($error, [], 500);
+                        return sendError($error, [], 500);
                     }
 
                 // Fin transfert vers la carte de l'utilisateur
                 
                 // A qui notifier?
-                return $this->sendResponse($transfert, 'Transfert effectué avec succes.');
+                return sendResponse($retrait, 'Transfert effectué avec succes.');
             }else {            
                 if($wallet->type == 'bcv'){                                
                     $receiver =  UserClient::where('deleted',0)->where('username',$wallet->phone_code.$wallet->phone)->first();
@@ -1340,12 +1015,12 @@ class PartenaireController extends Controller
                         } catch (BadResponseException $e) {
                             $json = json_decode($e->getResponse()->getBody()->getContents());
                             $error = $json->title.'.'.$json->detail;
-                            return $this->sendError($error, [], 500);
+                            return sendError($error, [], 500);
                         }
 
                     // Fin transfert vers la carte de l'utilisateur
 
-                    return $this->sendResponse($retrait, 'Transfert effectué avec succes.');
+                    return sendResponse($retrait, 'Transfert effectué avec succes.');
                 }else if($wallet->type == 'bmo'){                        
                     try{             
                         $partner_reference = substr($wallet->phone_code.$wallet->phone, -4).time();
@@ -1389,7 +1064,7 @@ class PartenaireController extends Controller
                         $retrait->save();
             
                     } catch (BadResponseException $e) {
-                        return $this->sendError($e->getMessage(), [], 401);
+                        return sendError($e->getMessage(), [], 401);
                     }
                 }else{
                     try { 
@@ -1427,7 +1102,7 @@ class PartenaireController extends Controller
                         $starttime = time();
 
                         while ($status == "PENDING") {
-                            $externalTransaction = $this->resultat_check_status_kkp($resultat->transactionId);
+                            $externalTransaction = resultat_check_status_kkp($resultat->transactionId);
                             if ($externalTransaction->status == "SUCCESS"){
                                 $reference_operateur = $externalTransaction->externalTransactionId;
                         
@@ -1440,11 +1115,11 @@ class PartenaireController extends Controller
                                 $status = "SUCCESS";
                             }else if($externalTransaction->status == "FAILED") {
                                 $status = "FAILED";
-                                return $this->sendError('Echec lors du paiement du transfert. Contacter notre service clientèle', [], 500);
+                                return sendError('Echec lors du paiement du transfert. Contacter notre service clientèle', [], 500);
                             }else{
                                 $now = time()-$starttime;
                                 if ($now > 125) {
-                                    return $this->sendError('Echec de confirmation du transfert. Contacter notre service clientèle', [], 500);
+                                    return sendError('Echec de confirmation du transfert. Contacter notre service clientèle', [], 500);
                                 }
                                 $status = $externalTransaction->status;
                             }
@@ -1458,7 +1133,7 @@ class PartenaireController extends Controller
             
             // Envoie de notification a l'emmeteur 
                 $message = 'Retrait de '.$montant.' XOF de votre compte de commission BCV.';   
-                $this->sendSms($partner->telephone,$message);
+                sendSms($partner->telephone,$message);
 
                 $email = $partner->email;
                 $arr = ['messages'=> $message,'objet'=>'Alerte retrait sur compte de commission','from'=>'noreply-bcv@bestcash.me'];
@@ -1466,9 +1141,9 @@ class PartenaireController extends Controller
             // Fin envoie de notification a l'emmeteur 
 
 
-            return $this->sendResponse($wallet, 'Success');
+            return sendResponse($wallet, 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1572,13 +1247,13 @@ class PartenaireController extends Controller
                     } catch (BadResponseException $e) {
                         $json = json_decode($e->getResponse()->getBody()->getContents());
                         $error = $json->title.'.'.$json->detail;
-                        return $this->sendError($error, [], 500);
+                        return sendError($error, [], 500);
                     }
 
                 // Fin transfert vers la carte de l'utilisateur
                 
                 // A qui notifier?
-                return $this->sendResponse($transfert, 'Transfert effectué avec succes.');
+                return sendResponse($retrait, 'Transfert effectué avec succes.');
             }else {            
                 if($wallet->type == 'bcv'){                                
                     $receiver =  UserClient::where('deleted',0)->where('username',$wallet->phone_code.$wallet->phone)->first();
@@ -1632,12 +1307,12 @@ class PartenaireController extends Controller
                         } catch (BadResponseException $e) {
                             $json = json_decode($e->getResponse()->getBody()->getContents());
                             $error = $json->title.'.'.$json->detail;
-                            return $this->sendError($error, [], 500);
+                            return sendError($error, [], 500);
                         }
 
                     // Fin transfert vers la carte de l'utilisateur
 
-                    return $this->sendResponse($retrait, 'Transfert effectué avec succes.');
+                    return sendResponse($retrait, 'Transfert effectué avec succes.');
                 }else if($wallet->type == 'bmo'){                        
                     try{             
                         $partner_reference = substr($wallet->phone_code.$wallet->phone, -4).time();
@@ -1681,7 +1356,7 @@ class PartenaireController extends Controller
                         $retrait->save();
             
                     } catch (BadResponseException $e) {
-                        return $this->sendError($e->getMessage(), [], 401);
+                        return sendError($e->getMessage(), [], 401);
                     }
                 }else{
                     try { 
@@ -1719,7 +1394,7 @@ class PartenaireController extends Controller
                         $starttime = time();
 
                         while ($status == "PENDING") {
-                            $externalTransaction = $this->resultat_check_status_kkp($resultat->transactionId);
+                            $externalTransaction = resultat_check_status_kkp($resultat->transactionId);
                             if ($externalTransaction->status == "SUCCESS"){
                                 $reference_operateur = $externalTransaction->externalTransactionId;
                         
@@ -1732,11 +1407,11 @@ class PartenaireController extends Controller
                                 $status = "SUCCESS";
                             }else if($externalTransaction->status == "FAILED") {
                                 $status = "FAILED";
-                                return $this->sendError('Echec lors du paiement du transfert. Contacter notre service clientèle', [], 500);
+                                return sendError('Echec lors du paiement du transfert. Contacter notre service clientèle', [], 500);
                             }else{
                                 $now = time()-$starttime;
                                 if ($now > 125) {
-                                    return $this->sendError('Echec de confirmation du transfert. Contacter notre service clientèle', [], 500);
+                                    return sendError('Echec de confirmation du transfert. Contacter notre service clientèle', [], 500);
                                 }
                                 $status = $externalTransaction->status;
                             }
@@ -1750,7 +1425,7 @@ class PartenaireController extends Controller
             
             // Envoie de notification a l'emmeteur 
                 $message = 'Retrait de '.$montant.' XOF de votre compte de commission BCV.';   
-                $this->sendSms($partner->telephone,$message);
+                sendSms($partner->telephone,$message);
 
                 $email = $partner->email;
                 $arr = ['messages'=> $message,'objet'=>'Alerte retrait sur compte de commission','from'=>'noreply-bcv@bestcash.me'];
@@ -1758,9 +1433,9 @@ class PartenaireController extends Controller
             // Fin envoie de notification a l'emmeteur 
 
 
-            return $this->sendResponse($wallet, 'Success');
+            return sendResponse($wallet, 'Success');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1773,7 +1448,7 @@ class PartenaireController extends Controller
             $accountDistribution = AccountDistribution::where('deleted',0)->where('partenaire_id',$partenaire->id)->first();
             $montant = (int)$request->montant;
             if($accountCommission->solde < $montant){
-                return $this->sendError('Votre solde commission est insuffisant pour cet opération', [], 500);
+                return sendError('Votre solde commission est insuffisant pour cet opération', [], 500);
             }
             
             $referenceBcb = 'ret-'.Uuid::uuid4()->toString();
@@ -1812,17 +1487,17 @@ class PartenaireController extends Controller
             
             
             $message = "Vous avez transferer ".$montant." XOF de votre compte commission vers votre compte de distribution.";
-            $this->sendSms($partenaire->telephone,$message);
-            return $this->sendResponse([], 'Transfert effectué avec succes');
+            sendSms($partenaire->telephone,$message);
+            return sendResponse([], 'Transfert effectué avec succes');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
     public function transfertCommissionDistribution(Request $request){
         try{
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -1835,9 +1510,9 @@ class PartenaireController extends Controller
             $operations = AccountCommissionOperation::where('deleted',0)->where('account_commission_id',$partenaire->accountCommission->id)->orderBy('id','desc')->get()->all();   
             $data['compte'] = $compte;
             $data['operations'] = $operations;
-            return $this->sendResponse($data, 'Liste chargée avec succes.');
+            return sendResponse($data, 'Liste chargée avec succes.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -1849,9 +1524,9 @@ class PartenaireController extends Controller
             
             $data['compte'] = $compte;
             $data['operations'] = $operations;
-            return $this->sendResponse($data, 'Liste chargée avec succes.');
+            return sendResponse($data, 'Liste chargée avec succes.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -1862,7 +1537,7 @@ class PartenaireController extends Controller
                 'partenaire_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
 
             $req = $request->all();
@@ -1875,9 +1550,9 @@ class PartenaireController extends Controller
                 $value['date'] = $value->created_at->format('d-m-Y H:i');
             }
             
-            return $this->sendResponse($users, 'Liste chargée avec succes.');
+            return sendResponse($users, 'Liste chargée avec succes.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1887,15 +1562,15 @@ class PartenaireController extends Controller
                 'user_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             $req = $request->all();
 
             $user = UserPartenaire::where('id',$req['user_id'])->where('deleted',0)->first();
             
-            return $this->sendResponse($user, 'Liste chargée avec succes.');
+            return sendResponse($user, 'Liste chargée avec succes.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1908,7 +1583,7 @@ class PartenaireController extends Controller
                 "role" => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             
             $req = $request->all();
@@ -1926,9 +1601,9 @@ class PartenaireController extends Controller
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ]);
-            return $this->sendResponse($user, 'Utilisateur crée avec succès');
+            return sendResponse($user, 'Utilisateur crée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1941,7 +1616,7 @@ class PartenaireController extends Controller
                 'role' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             $req = $request->all();
             $user = UserPartenaire::where('id',$req['user_id'])->where('deleted',0)->first();
@@ -1952,9 +1627,9 @@ class PartenaireController extends Controller
             $user->updated_at = Carbon::now();
             $user->save();
 
-            return $this->sendResponse($user, 'Modification effectuée avec succès');
+            return sendResponse($user, 'Modification effectuée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1964,7 +1639,7 @@ class PartenaireController extends Controller
                 'user_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             $req = $request->all();
             $user = UserPartenaire::where('id',$req['user_id'])->where('deleted',0)->first();
@@ -1972,9 +1647,9 @@ class PartenaireController extends Controller
             $user->deleted = 1;
             $user->save();
 
-            return $this->sendResponse($user, 'Supression effectuée avec succès');
+            return sendResponse($user, 'Supression effectuée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -1984,7 +1659,7 @@ class PartenaireController extends Controller
                 'user_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             $req = $request->all();
             $user = UserPartenaire::where('id',$req['user_id'])->where('deleted',0)->first();
@@ -1993,9 +1668,9 @@ class PartenaireController extends Controller
             $user->updated_at = Carbon::now();
             $user->save();
 
-            return $this->sendResponse($user, 'Reinitialisation effectuée avec succès');
+            return sendResponse($user, 'Reinitialisation effectuée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -2005,7 +1680,7 @@ class PartenaireController extends Controller
                 'user_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             $req = $request->all();
             $user = UserPartenaire::where('id',$req['user_id'])->where('deleted',0)->first();
@@ -2014,9 +1689,9 @@ class PartenaireController extends Controller
             $user->updated_at = Carbon::now();
             $user->save();
 
-            return $this->sendResponse($user, 'Activation effectuée avec succès');
+            return sendResponse($user, 'Activation effectuée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -2026,7 +1701,7 @@ class PartenaireController extends Controller
                 'user_id' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors(), [],422);
+                return  sendError($validator->errors(), [],422);
             }
             $req = $request->all();
             $user = UserPartenaire::where('id',$req['user_id'])->where('deleted',0)->first();
@@ -2035,9 +1710,9 @@ class PartenaireController extends Controller
             $user->updated_at = Carbon::now();
             $user->save();
 
-            return $this->sendResponse($user, 'Desactivation effectuée avec succès');
+            return sendResponse($user, 'Desactivation effectuée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -2056,9 +1731,9 @@ class PartenaireController extends Controller
             $user->rolePartenaire->rolePartenairePermissions;
             $user->makeHidden(['password']);
         
-            return $this->sendResponse($user, 'Liste chargée avec succes.');
+            return sendResponse($user, 'Liste chargée avec succes.');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         }
     }
 
@@ -2071,20 +1746,20 @@ class PartenaireController extends Controller
                 'amount' => 'required'
             ]);
             if ($validator->fails()) {
-                return  $this->sendError($validator->errors()[0], [],422);
+                return  sendError($validator->errors()[0], [],422);
             }
 
             // Check du partenaire et des clés
             $partenaire = ApiPartenaireAccount::where('id',$request->program_id)->where('deleted',0)->first();
 
             if(!$partenaire){
-                return $this->sendError('Aucun partenaire n\'est lié a ce programme', [], 404);
+                return sendError('Aucun partenaire n\'est lié a ce programme', [], 404);
             }
 
             if($request->header('API-KEY') == null || $request->header('API-KEY') != $partenaire->api_key ||
                 $request->header('PUBLIC-API-KEY') == null || $request->header('PUBLIC-API-KEY') != $partenaire->public_api_key ||
                 $request->header('SECRET-API-KEY') == null || $request->header('SECRET-API-KEY') != $partenaire->secret_api_key){
-                return $this->sendError('Verifier vos clés API', [], 401);
+                return sendError('Verifier vos clés API', [], 401);
             }
             
             // Calcul des frais
@@ -2109,7 +1784,7 @@ class PartenaireController extends Controller
 
             // Check de la faisabilité
             if($partenaire->balance < ($request->amount + $frais)){
-                return $this->sendError('BALANCE INSUFFISANT', [], 401);
+                return sendError('BALANCE INSUFFISANT', [], 401);
             }
     
             $soldeAvant = $partenaire->balance;
@@ -2187,11 +1862,11 @@ class PartenaireController extends Controller
             } catch (BadResponseException $e) {
                 $transaction->status = 0;
                 $transaction->save();
-                return $this->sendError('Erreur lors de la transaction', [], 500);
+                return sendError('Erreur lors de la transaction', [], 500);
             }
-            return $this->sendResponse($transaction, 'Client crédité avec succès');
+            return sendResponse($transaction, 'Client crédité avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -2200,22 +1875,22 @@ class PartenaireController extends Controller
             $partenaire = ApiPartenaireAccount::where('id',$request->program_id)->where('deleted',0)->first();
 
             if(!$partenaire){
-                return $this->sendError('Aucun partenaire n\'est lié a ce programme', [], 404);
+                return sendError('Aucun partenaire n\'est lié a ce programme', [], 404);
             }
 
             if($request->header('API-KEY') == null || $request->header('API-KEY') != $partenaire->api_key ||
                 $request->header('PUBLIC-API-KEY') == null || $request->header('PUBLIC-API-KEY') != $partenaire->public_api_key ||
                 $request->header('SECRET-API-KEY') == null || $request->header('SECRET-API-KEY') != $partenaire->secret_api_key){
-                return $this->sendError('Verifier vos clés API', [], 401);
+                return sendError('Verifier vos clés API', [], 401);
             }
             
             $data = [];
             $data['balance'] = $partenaire->balance;
             $data['currency'] = 'XOF';
 
-            return $this->sendResponse($data, 'Solde');
+            return sendResponse($data, 'Solde');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
 
@@ -2224,107 +1899,91 @@ class PartenaireController extends Controller
             $partenaire = ApiPartenaireAccount::where('id',$request->program_id)->where('deleted',0)->first();
 
             if(!$partenaire){
-                return $this->sendError('Aucun partenaire n\'est lié a ce programme', [], 404);
+                return sendError('Aucun partenaire n\'est lié a ce programme', [], 404);
             }
 
             if($request->header('API-KEY') == null || $request->header('API-KEY') != $partenaire->api_key ||
                 $request->header('PUBLIC-API-KEY') == null || $request->header('PUBLIC-API-KEY') != $partenaire->public_api_key ||
                 $request->header('SECRET-API-KEY') == null || $request->header('SECRET-API-KEY') != $partenaire->secret_api_key){
-                return $this->sendError('Verifier vos clés API', [], 401);
+                return sendError('Verifier vos clés API', [], 401);
             }
             
             $transactions = ApiPartenaireTransaction::where('api_partenaire_account_id',$request->program_id)->get();
 
-            return $this->sendResponse($transactions, 'Supression effectuée avec succès');
+            return sendResponse($transactions, 'Supression effectuée avec succès');
         } catch (\Exception $e) {
-            return $this->sendError($e->getMessage(), [], 500);
+            return sendError($e->getMessage(), [], 500);
         };
     }
-    
 
-
-    private function sendSms($receiver, $message){
-        /*$basic  = new \Nexmo\Client\Credentials\Basic(env("NEXMO_KEY"), env("NEXMO_SECRET"));
-        $clientSms = new \Nexmo\Client($basic);
-        $receiver = str_replace(' ', '', $receiver);
-        
-        $sms = $clientSms->message()->send([
-            'to' => $receiver,
-            'from' => 'BCB VIRTUELLE',
-            'text' => $message
-        ]);*/
-
-        
-        $endpoint = "https://smsapi.moov.bj:8443/sendmsg/api?username=ELG&password=elg@&apikey=7073295b7bbc55100c479e3d941518ec&src=UBA+Bmo&dst=".$receiver."&text=".$message."&refnumber=6334353dc8fb7&type=web";  
-            
-        $client = new \GuzzleHttp\Client([                                                                                                                                                                   
-            'verify' => false                                                                                                                                                                               
-        ]);                                                                                                                                                                                               
-                                                                                                                                                                                                            
-        $response = $client->request('GET', $endpoint);                                                                                                                                   
-                                                                                                                                                                                                            
-        $statusCode = $response->getStatusCode();  
-    }
-    
-    public function sendResponse($data, $message){
-    	$response = [
-            'success' => true,
-            'data'    => $data,
-            'message' => $message,
-        ];
-
-        return response()->json($response, 200);
-    }
-
-    public function sendError($message, $data = [], $code = 404){
-    	$response = [
-            'success' => false,
-            'errors' => $message,
-        ];
-
-
-        if(!empty($data)){
-            $response['data'] = $data;
-        }
-
-
-        return response()->json($response, $code);
-    }
     
     protected function createNewToken($token){
         return $token;
     }
+
+    private function repartitionCommission($compteCommissionPartenaire,$compteDistributionPartenaire,$fraisOperation,$frais,$montant,$referenceBcb,$referenceGtp){
+        if($fraisOperation){        
+            $fraiCompteCommissions = $fraisOperation->fraiCompteCommissions;
+            
+            foreach ($fraiCompteCommissions as $value) {
+                $compteCommission = CompteCommission::where('id',$value->compte_commission_id)->first();
     
-    public function resultat_check_status_kkp($transactionId){
-        try {  
-            
-            $base_url_kkp = env('BASE_KKIAPAY');
-
-            $client = new Client();
-            $url = $base_url_kkp."/api/v1/transactions/status";
-            
-            $headers = [
-                'x-api-key' => env('API_KEY_KKIAPAY')
-            ];
-
-            $body = [
-                'transactionId' => $transactionId
-            ];
-
-            $body = json_encode($body);
-
-            $response = $client->request('POST', $url, [
-                'headers' => $headers,
-                'body' => $body
-            ]);
-
-            
-            $externalTransaction = json_decode($response->getBody());
+                if($value->type == 'pourcentage'){
+                    $commission = $frais * $value->value / 100;
+                }else{
+                    $commission = $value->value;
+                }
     
-            return $externalTransaction;
-            
-        } catch (BadResponseException $e) {
-            return $e->getMessage();
+                $compteCommission->solde += $commission;
+                $compteCommission->save();
+                
+                CompteCommissionOperation::create([
+                    'id' => Uuid::uuid4()->toString(),
+                    'compte_commission_id'=> $compteCommission->id,
+                    'type_operation'=>'rechargement',
+                    'montant'=> $montant,
+                    'frais'=> $frais,
+                    'commission'=> $commission,
+                    'reference_bcb'=> $referenceBcb,
+                    'reference_gtp'=> $referenceGtp,
+                    'status'=> 0,
+                    'deleted'=> 0,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()                
+                ]);
+            }
+    
+            if($fraisOperation->value_partenaire > 0){
+                if($fraisOperation->type_commission_partenaire == 'pourcentage'){
+                    $commissionPartenaire = $frais * $fraisOperation->value_commission_partenaire / 100;
+                }else{
+                    $commissionPartenaire = $fraisOperation->value_commission_partenaire;
+                }
+    
+                $soldeAvIncr = $compteCommissionPartenaire->solde;
+                $compteCommissionPartenaire->solde += $commissionPartenaire;
+                $compteCommissionPartenaire->save();
+                
+                
+                $soldeApIncr = $compteDistributionPartenaire->solde + $commissionPartenaire;
+    
+                AccountCommissionOperation::insert([
+                    'id' => Uuid::uuid4()->toString(),
+                    'reference_bcb'=> $referenceBcb,
+                    'reference_gtp'=> $referenceGtp,
+                    'solde_avant' => $soldeAvIncr,
+                    'montant' => $commissionPartenaire,
+                    'solde_apres' => $soldeApIncr,
+                    'libelle' => 'Commission sur depot',
+                    'type' => 'credit',
+                    'account_commission_id' => $compteCommissionPartenaire->id,
+                    'deleted' => 0,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),            
+                ]);
+            }
+    
         }
     }
 }
+

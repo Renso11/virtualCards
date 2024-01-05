@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
+class ComposerStaticInite82bdcb707cdea52093f0fbdedd58c13
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -53,7 +53,9 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
         '58571171fd5812e6e447dce228f52f4d' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/helpers.php',
         '40275907c8566c390185147049ef6e5d' => __DIR__ . '/..' . '/livewire/livewire/src/helpers.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
-        'b4e3f29b106af37a2bb239f73cdf68c7' => __DIR__ . '/../..' . '/app/helpers.php',
+        'd21d43db5f6e840ee7b10744ec7fdf66' => __DIR__ . '/../..' . '/app/Helpers/helpers.php',
+        '458da88fe4f81e9ed023d1fba84bf3c1' => __DIR__ . '/../..' . '/app/Helpers/paiement.php',
+        '2868f8da932e312dc6e9485552c0293d' => __DIR__ . '/../..' . '/app/Helpers/restriction.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -619,6 +621,12 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
     public static $classMap = array (
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
+        'App\\Http\\Controllers\\Api\\Client\\BeneficiaryController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Client/BeneficiaryController.php',
+        'App\\Http\\Controllers\\Api\\Client\\CardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Client/CardController.php',
+        'App\\Http\\Controllers\\Api\\Client\\ClientController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Client/ClientController.php',
+        'App\\Http\\Controllers\\Api\\Client\\DepotController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Client/DepotController.php',
+        'App\\Http\\Controllers\\Api\\Client\\RetraitController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Client/RetraitController.php',
+        'App\\Http\\Controllers\\Api\\Client\\TransfertController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Client/TransfertController.php',
         'App\\Http\\Controllers\\Api\\ValidatorController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/ValidatorController.php',
         'App\\Http\\Controllers\\AppController' => __DIR__ . '/../..' . '/app/Http/Controllers/AppController.php',
         'App\\Http\\Controllers\\Auth\\ConfirmPasswordController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/ConfirmPasswordController.php',
@@ -627,10 +635,8 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
         'App\\Http\\Controllers\\Auth\\RegisterController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/RegisterController.php',
         'App\\Http\\Controllers\\Auth\\ResetPasswordController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/ResetPasswordController.php',
         'App\\Http\\Controllers\\Auth\\VerificationController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/VerificationController.php',
-        'App\\Http\\Controllers\\CartePhysiqueController' => __DIR__ . '/../..' . '/app/Http/Controllers/CartePhysiqueController.php',
-        'App\\Http\\Controllers\\CarteVirtuelleController' => __DIR__ . '/../..' . '/app/Http/Controllers/CarteVirtuelleController.php',
         'App\\Http\\Controllers\\ClientController' => __DIR__ . '/../..' . '/app/Http/Controllers/ClientController.php',
-        'App\\Http\\Controllers\\CommissionController' => __DIR__ . '/../..' . '/app/Http/Controllers/CommissionController.php',
+        'App\\Http\\Controllers\\CompteController' => __DIR__ . '/../..' . '/app/Http/Controllers/CompteController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\HomeController' => __DIR__ . '/../..' . '/app/Http/Controllers/HomeController.php',
         'App\\Http\\Controllers\\ParametreController' => __DIR__ . '/../..' . '/app/Http/Controllers/ParametreController.php',
@@ -678,11 +684,15 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
         'App\\Models\\CartePhysique' => __DIR__ . '/../..' . '/app/Models/CartePhysique.php',
         'App\\Models\\CarteVirtuelle' => __DIR__ . '/../..' . '/app/Models/CarteVirtuelle.php',
         'App\\Models\\Commission' => __DIR__ . '/../..' . '/app/Models/Commission.php',
+        'App\\Models\\CompteCommission' => __DIR__ . '/../..' . '/app/Models/CompteCommission.php',
+        'App\\Models\\CompteCommissionOperation' => __DIR__ . '/../..' . '/app/Models/CompteCommissionOperation.php',
+        'App\\Models\\CompteMouvement' => __DIR__ . '/../..' . '/app/Models/CompteMouvement.php',
         'App\\Models\\Departement' => __DIR__ . '/../..' . '/app/Models/Departement.php',
         'App\\Models\\Depot' => __DIR__ . '/../..' . '/app/Models/Depot.php',
         'App\\Models\\EntityAccountCommission' => __DIR__ . '/../..' . '/app/Models/EntityAccountCommission.php',
         'App\\Models\\EntityAccountCommissionOperation' => __DIR__ . '/../..' . '/app/Models/EntityAccountCommissionOperation.php',
         'App\\Models\\Frai' => __DIR__ . '/../..' . '/app/Models/Frai.php',
+        'App\\Models\\FraiCompteCommission' => __DIR__ . '/../..' . '/app/Models/FraiCompteCommission.php',
         'App\\Models\\Gamme' => __DIR__ . '/../..' . '/app/Models/Gamme.php',
         'App\\Models\\GtpRequest' => __DIR__ . '/../..' . '/app/Models/GtpRequest.php',
         'App\\Models\\Info' => __DIR__ . '/../..' . '/app/Models/Info.php',
@@ -691,6 +701,8 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
         'App\\Models\\Mouchard' => __DIR__ . '/../..' . '/app/Models/Mouchard.php',
         'App\\Models\\MouchardPartenaire' => __DIR__ . '/../..' . '/app/Models/MouchardPartenaire.php',
         'App\\Models\\Partenaire' => __DIR__ . '/../..' . '/app/Models/Partenaire.php',
+        'App\\Models\\PartnerWallet' => __DIR__ . '/../..' . '/app/Models/PartnerWallet.php',
+        'App\\Models\\PartnerWalletWithdraw' => __DIR__ . '/../..' . '/app/Models/PartnerWalletWithdraw.php',
         'App\\Models\\Permission' => __DIR__ . '/../..' . '/app/Models/Permission.php',
         'App\\Models\\Recharge' => __DIR__ . '/../..' . '/app/Models/Recharge.php',
         'App\\Models\\RechargementPartenaire' => __DIR__ . '/../..' . '/app/Models/RechargementPartenaire.php',
@@ -714,6 +726,7 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
         'App\\Models\\VentePartenaire' => __DIR__ . '/../..' . '/app/Models/VentePartenaire.php',
         'App\\Models\\VentePhysique' => __DIR__ . '/../..' . '/app/Models/VentePhysique.php',
         'App\\Models\\VenteVirtuelle' => __DIR__ . '/../..' . '/app/Models/VenteVirtuelle.php',
+        'App\\Models\\kkiapayRecharge' => __DIR__ . '/../..' . '/app/Models/kkiapayRecharge.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
         'App\\Providers\\BroadcastServiceProvider' => __DIR__ . '/../..' . '/app/Providers/BroadcastServiceProvider.php',
@@ -6470,10 +6483,10 @@ class ComposerStaticInitd362b9501ec965f8113221d2e9342b86
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitd362b9501ec965f8113221d2e9342b86::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitd362b9501ec965f8113221d2e9342b86::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitd362b9501ec965f8113221d2e9342b86::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitd362b9501ec965f8113221d2e9342b86::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInite82bdcb707cdea52093f0fbdedd58c13::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInite82bdcb707cdea52093f0fbdedd58c13::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInite82bdcb707cdea52093f0fbdedd58c13::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInite82bdcb707cdea52093f0fbdedd58c13::$classMap;
 
         }, null, ClassLoader::class);
     }

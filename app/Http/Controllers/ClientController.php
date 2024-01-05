@@ -15,7 +15,6 @@ use App\Mail\MailAlerte;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use App\Models\GtpRequest;
 use App\Models\Recharge;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
@@ -96,7 +95,7 @@ class ClientController extends Controller
         } catch (BadResponseException $e) {
             $json = json_decode($e->getResponse()->getBody()->getContents());   
             $error = $json->title.'.'.$json->detail;
-            return $this->sendError($error, [], 500);
+            return sendError($error, [], 500);
         }
         
         $data['firstName'] = $clientInfo->firstName;
@@ -105,7 +104,6 @@ class ClientController extends Controller
 
         return json_encode($data);
     }
-
 
     public function clientAdd(Request $request)
     {
@@ -160,7 +158,6 @@ class ClientController extends Controller
             return back()->withError($e->getMessage());
         }
     }
-
 
     public function clientEdit(Request $request)
     {   

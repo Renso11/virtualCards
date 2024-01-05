@@ -30,8 +30,8 @@ use App\Models\ApiPartenaireAccount;
 use App\Models\ApiPartenaireFee;
 use App\Models\ApiPartenaireTransaction;
 use App\Models\PartnerWalletWithdraw;
-use DB;
 use Illuminate\Support\Facades\Auth as Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Uuid;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -57,7 +57,7 @@ class PartenaireController extends Controller
                 return  sendError('Identifiants incorrectes', [],401);
             }
             
-            $user = auth('apiPartenaire')->user();
+            $user = UserPartenaire::where('id',auth('apiPartenaire')->user()->id)->first();
             
             if($user->status == 0){
                 return sendError('Ce compte est désactivé. Veuillez contactez le service clientèle', [], 401);
@@ -181,7 +181,7 @@ class PartenaireController extends Controller
     }
 
     public function getPartnerAllTransactions(Request $request){
-        try {          
+        try {
             $userPartenaire = UserPartenaire::where('id',$request->user_partenaire_id)->first();
 
             $partenaire = $userPartenaire->partenaire;
@@ -360,6 +360,7 @@ class PartenaireController extends Controller
                 'partenaire_id' => $userPartenaire->partenaire->id,
                 'user_partenaire_id' => $userPartenaire->id,
                 'user_card_id' => $card->id,
+                'reference_bcb' => Uuid::uuid4()->toString(),
                 'libelle' => 'Retrait du compte BCV '.$client->username. ' chez le marchand ' .$userPartenaire->partenaire->libelle,
                 'montant' => $montant,
                 'frais_bcb' => $frais,
@@ -1102,7 +1103,7 @@ class PartenaireController extends Controller
                         $starttime = time();
 
                         while ($status == "PENDING") {
-                            $externalTransaction = $this->resultat_check_status_kkp($resultat->transactionId);
+                            $externalTransaction = resultat_check_status_kkp($resultat->transactionId);
                             if ($externalTransaction->status == "SUCCESS"){
                                 $reference_operateur = $externalTransaction->externalTransactionId;
                         
@@ -1394,7 +1395,7 @@ class PartenaireController extends Controller
                         $starttime = time();
 
                         while ($status == "PENDING") {
-                            $externalTransaction = $this->resultat_check_status_kkp($resultat->transactionId);
+                            $externalTransaction = resultat_check_status_kkp($resultat->transactionId);
                             if ($externalTransaction->status == "SUCCESS"){
                                 $reference_operateur = $externalTransaction->externalTransactionId;
                         
@@ -1810,14 +1811,9 @@ class PartenaireController extends Controller
 
             $body = json_encode($body);
             
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-            
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id,
+                'requestId' => Uuid::uuid4()->toString(),
                 'accountId' => $accountId,
                 'Content-Type' => 'application/json', 'Accept' => 'application/json'
             ];
@@ -1828,7 +1824,7 @@ class PartenaireController extends Controller
             ];
             
             $transaction = ApiPartenaireTransaction::create([
-                        'id' => Uuid::uuid4()->toString(),
+                'id' => Uuid::uuid4()->toString(),
                 'api_partenaire_account_id' => $partenaire->id,
                 'type' => 'Debit',
                 'montant' => $request->amount,
@@ -1920,39 +1916,6 @@ class PartenaireController extends Controller
     protected function createNewToken($token){
         return $token;
     }
-    
-    public function resultat_check_status_kkp($transactionId){
-        try {  
-            
-            $base_url_kkp = env('BASE_KKIAPAY');
-
-            $client = new Client();
-            $url = $base_url_kkp."/api/v1/transactions/status";
-            
-            $headers = [
-                'x-api-key' => env('API_KEY_KKIAPAY')
-            ];
-
-            $body = [
-                'transactionId' => $transactionId
-            ];
-
-            $body = json_encode($body);
-
-            $response = $client->request('POST', $url, [
-                'headers' => $headers,
-                'body' => $body
-            ]);
-
-            
-            $externalTransaction = json_decode($response->getBody());
-    
-            return $externalTransaction;
-            
-        } catch (BadResponseException $e) {
-            return $e->getMessage();
-        }
-    }
 
     private function repartitionCommission($compteCommissionPartenaire,$compteDistributionPartenaire,$fraisOperation,$frais,$montant,$referenceBcb,$referenceGtp){
         if($fraisOperation){        
@@ -1998,7 +1961,7 @@ class PartenaireController extends Controller
                 $compteCommissionPartenaire->save();
                 
                 
-                $soldeApIncr = $compteDistributionPartenaire->solde + $commissionPartenaire;
+                $soldeApIncr = $compteCommissionPartenaire->solde + $commissionPartenaire;
     
                 AccountCommissionOperation::insert([
                     'id' => Uuid::uuid4()->toString(),

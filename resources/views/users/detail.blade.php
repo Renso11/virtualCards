@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
 @endsection
 @section('page')
-    Détails de l'utilisateur
+    Détails de {{ $user->name . ' ' . $user->lastname }}
 @endsection
 @section('content')
     <section class="content">
@@ -66,7 +66,7 @@
                 <div class="col-md-9">
                     <div class="card">
                         <div class="card-header p-2">
-                            <h5>Activité de l'utilisateur</h3>
+                            <h5>Activité de {{ $user->name . ' ' . $user->lastname }}</h3>
                         </div><!-- /.card-header -->
                         <div class="card-body">
                             <div class="card-body table-responsive">
@@ -104,11 +104,11 @@
                         @csrf
                         <div class="modal-body">
                             <div class="form-group">  
-                                <label for="recipient-name" class="control-label">Nom de l'Utilisateur:</label>
+                                <label for="recipient-name" class="control-label">Nom :</label>
                                 <input type="text" value="{{ $user->name }}" autocomplete="off" class="form-control" name="name">
                             </div>
                             <div class="form-group">  
-                                <label for="recipient-name" class="control-label">Prenom de l'utilisateur:</label>
+                                <label for="recipient-name" class="control-label">Prenom :</label>
                                 <input type="text" value="{{ $user->lastname }}" autocomplete="off" class="form-control" name="lastname">
                             </div>
                             <div class="form-group">  

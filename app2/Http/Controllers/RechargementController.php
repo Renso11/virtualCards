@@ -57,17 +57,13 @@ class RechargementController extends Controller
             $rechargement = Recharge::where('id',$request->id)->where('deleted',0)->orderBy('id','desc')->first();
 
             //recuperation solde avant et apres
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
 
             $client = new Client();
             $url = $base_url."accounts/".$rechargement->userClient->code."/balance";
 
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id
+                'requestId' => Uuid::uuid4()->toString(),
             ];
 
             $auth = [
@@ -85,7 +81,7 @@ class RechargementController extends Controller
             } catch (BadResponseException $e) {
                 $json = json_decode($e->getResponse()->getBody()->getContents());
                 $error = $json->title.'.'.$json->detail;
-                return $this->sendError($error, [], 500);
+                return sendError($error, [], 500);
             }
 
             $soldeAv = $balance->balance;
@@ -103,16 +99,10 @@ class RechargementController extends Controller
             ];
 
             $body = json_encode($body);
-        
-            
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
             
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id,
+                'requestId' => Uuid::uuid4()->toString(),
                 'Content-Type' => 'application/json', 'Accept' => 'application/json'
             ];
         

@@ -16,17 +16,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use App\Models\GtpRequest;
+use App\Models\Recharge;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Ramsey\Uuid\Uuid;
-
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-
-use PhpOffice\PhpSpreadsheet\Reader\Exception;
-
-use PhpOffice\PhpSpreadsheet\Writer\Xls;
-use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ClientController extends Controller
@@ -43,17 +37,12 @@ class ClientController extends Controller
         $data = [];
 
         try {   
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
             $client = new Client();
             $url = $base_url."accounts/".$code;
         
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id
+                'requestId' => Uuid::uuid4()->toString(),
             ];
         
             $auth = [
@@ -66,6 +55,8 @@ class ClientController extends Controller
             ]);
         
             $clientInfo = json_decode($response->getBody());
+            $data['firstName'] = $clientInfo->firstName;
+            $data['lastname'] = $clientInfo->lastName;
 
             if($clientInfo->cardStatus == 'LC'){
                 return back()->withWarning('Cette carte est pour le moment bloqué.');
@@ -78,14 +69,9 @@ class ClientController extends Controller
             $client = new Client();
             $url = $base_url."accounts/phone-number";
     
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-    
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id
+                'requestId' => Uuid::uuid4()->toString(),
             ];
     
             $query = [
@@ -106,18 +92,16 @@ class ClientController extends Controller
             foreach ($accountInfoLists as $value) {
                 if($value->accountId == $code){
                     $accountInfo = $value;
+                    $data['lastFourDigits'] = $accountInfo->lastFourDigits;
                     break;
                 }
             }
         } catch (BadResponseException $e) {
             $json = json_decode($e->getResponse()->getBody()->getContents());   
             $error = $json->title.'.'.$json->detail;
-            return $this->sendError($error, [], 500);
+            return sendError($error, [], 500);
         }
         
-        $data['firstName'] = $clientInfo->firstName;
-        $data['lastname'] = $clientInfo->lastName;
-        $data['lastFourDigits'] = $accountInfo->lastFourDigits;
 
         return json_encode($data);
     }
@@ -168,14 +152,13 @@ class ClientController extends Controller
 
     public function clientsAttentes(Request $request)
     {
-        //try{
+        try{
             $userClients = UserClient::where('deleted',0)->where('verification',0)->orderBy('id','desc')->get();
             $countries = $this->countries;
-            //dd($userClients);
             return view('clients.attentes',compact('userClients','countries'));
-        /*} catch (\Exception $e) {
+        } catch (\Exception $e) {
             return back()->withError($e->getMessage());
-        }*/
+        }
     }
 
 
@@ -315,6 +298,84 @@ class ClientController extends Controller
         }
     }
 
+    public function clientOperationsAttentes(Request $request)
+    {
+        try{
+            
+            $depots = Recharge::where('status','pending')->where('deleted',0)->get();
+            foreach($depots as $depot){
+                $depot->date = $depot->created_at->format('d-m-Y');
+                $depot->type = 'Recharge';
+                $depot->partenaire = $depot->partenaire;
+                $depot->userClient = $depot->userClient;
+            }
+
+            $transferts = TransfertOut::where('status','pending')->where('deleted',0)->get();
+            foreach($transferts as $transfert){
+                $transfert->date = $transfert->created_at->format('d-m-Y');
+                $transfert->type = 'Transfert';
+                $transfert->partenaire = $transfert->partenaire;
+                $transfert->userClient = $transfert->userClient;
+            }
+            
+            $transactions = array_merge($depots->toArray(), $transferts->toArray());
+            
+        
+            array_multisort(
+                array_map(
+                    static function ($element) {
+                        return $element['created_at'];
+                    },
+                    $transactions
+                ),
+                SORT_DESC,
+                $transactions
+            );
+            return view('clients.operations.attentes',compact('transactions'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
+    public function clientOperationsFinalises(Request $request)
+    {
+        try{
+            
+            $depots = Recharge::where('status','completed')->where('deleted',0)->get();
+            foreach($depots as $depot){
+                $depot->date = $depot->created_at->format('d-m-Y');
+                $depot->type = 'Recharge';
+                $depot->partenaire = $depot->partenaire;
+                $depot->userClient = $depot->userClient;
+            }
+
+            $transferts = TransfertOut::where('status','completed')->where('deleted',0)->get();
+            foreach($transferts as $transfert){
+                $transfert->date = $transfert->created_at->format('d-m-Y');
+                $transfert->type = 'Transfert';
+                $transfert->partenaire = $transfert->partenaire;
+                $transfert->userClient = $transfert->userClient;
+            }
+            
+            $transactions = array_merge($depots->toArray(), $transferts->toArray());
+            
+        
+            array_multisort(
+                array_map(
+                    static function ($element) {
+                        return $element['created_at'];
+                    },
+                    $transactions
+                ),
+                SORT_DESC,
+                $transactions
+            );
+            return view('clients.operations.finalises',compact('transactions'));
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
     public function kycEdit(Request $request)
     { 
         //dd($request);
@@ -382,11 +443,6 @@ class ClientController extends Controller
             if (strlen($name) > 19){
                 $name = substr($name, 0, 19);
             }
-            
-            $requestId = GtpRequest::create([
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
 
             $body = [
                 "firstName" => $data['nom'],
@@ -414,7 +470,7 @@ class ClientController extends Controller
             
             $headers = [
                 'programId' => $programID,
-                'requestId' => $requestId->id,
+                'requestId' => Uuid::uuid4()->toString(),
                 'Content-Type' => 'application/json', 'Accept' => 'application/json'
             ];
         
@@ -484,176 +540,6 @@ class ClientController extends Controller
             return back()->withSuccess('Vente effectuée avec succes');
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
-        }
-    }
-
-    public function addCartePersoMulti(Request $request)
-    {
-        try{
-            $file = $request->file('file');
-
-            $extension = $file->getClientOriginalExtension();
-            $fileSize = $file->getSize();
-            $this->checkUploadedFileProperties($extension, $fileSize);
-
-            $spreadsheet = IOFactory::load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
-            $row_limit = $sheet->getHighestDataRow();
-            $column_limit = $sheet->getHighestDataColumn();
-            $row_range    = range(2, $row_limit );
-            $column_range = range('A', $column_limit );
-            $arr = [];
-            $i = 0;
-
-            foreach ($row_range as $row) {
-                $data = [
-                    "nom" => $sheet->getCell('A' . $row )->getValue(),
-                    "prenom" =>$sheet->getCell('B' . $row )->getValue(),
-                    "naissance" =>$sheet->getCell('C' . $row )->getValue(),
-                    "dep" =>$sheet->getCell('D' . $row )->getValue(),
-                    "pays" =>$sheet->getCell('E' . $row )->getValue(),
-                    "ville" =>$sheet->getCell('F' . $row )->getValue(),
-                    "adresse" =>$sheet->getCell('G' . $row )->getValue(),
-                    "numpiece" =>$sheet->getCell('H' . $row )->getValue(),
-                    "code" =>'+'.$sheet->getCell('I' . $row )->getValue(),
-                    "tel" =>$sheet->getCell('J' . $row )->getValue(),
-                    "email" =>$sheet->getCell('K' . $row )->getValue()
-                ];
-
-                $birthday = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($data['naissance'])->format('Y-m-d');
-                
-                $birthday = $birthday[2].'-'.$this->dateLibelle[$birthday[1]].'-'.$birthday[0];
-
-
-                $base_url = env('BASE_GTP_API');
-                $programID = env('PROGRAM_ID');
-                $authLogin = env('AUTH_LOGIN');
-                $authPass = env('AUTH_PASS');
-
-
-                $client = new Client();
-                $url = $base_url."accounts/personalized";
-                
-                $name = $data['nom'].' '.$data['prenom'];
-                if (strlen($name) > 19){
-                    $name = substr($name, 0, 19);
-                }
-                
-                $requestId = GtpRequest::create([
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
-
-                $body = [
-                    "firstName" => $data['nom'],
-                    "lastName" => $data['prenom'],
-                    "preferredName" => $name,
-                    "address1" => $data['adresse'],
-                    "city" => $data['ville'],
-                    "country" => $data['pays'],
-                    "stateRegion" => $data['dep'],
-                    "birthDate" =>  $birthday,
-                    "idType" => 4,
-                    "idValue" => $data['numpiece'],
-                    "mobilePhoneNumber" => [
-                    "countryCode" => $data['code'],
-                    "number" =>  $data['tel'],
-                    ],
-                    "emailAddress" => $data['email'],
-                    "accountSource" => "OTHER",
-                    "referredBy" => 11874629,
-                    "subCompany" => 11874629,
-                    //"return" => "RETURNPASSCODE"
-                ];
-        
-                $body = json_encode($body);
-                
-                $headers = [
-                    'programId' => $programID,
-                    'requestId' => $requestId->id,
-                    'Content-Type' => 'application/json', 'Accept' => 'application/json'
-                ];
-            
-                $auth = [
-                    $authLogin,
-                    $authPass
-                ];
-                
-                try {
-                    $response = $client->request('POST', $url, [
-                        'auth' => $auth,
-                        'headers' => $headers,
-                        'body' => $body,
-                        'verify'  => false,
-                    ]);            
-                    $responseBody = json_decode($response->getBody());
-                } catch (BadResponseException $e) {
-                    $json = json_decode($e->getResponse()->getBody()->getContents());
-                        $error = $json->title.'.'.$json->detail;
-                    return back()->withWarning($error);
-                }
-                // Enregistrer la carte perso
-
-                $user = Auth::user();
-                $filename = time().'.'.$request->piece->getClientOriginalExtension();
-                $request->piece->move('storage/client/', $filename);
-                $url_piece = 'storage/client/'.$filename;
-
-
-                $kyc = KycClient::create([
-                        'id' => Uuid::uuid4()->toString(),
-                    'name' => $data['nom'],
-                    'lastname' => $data['prenom'],
-                    'email' => $data['email'],
-                    'telephone' => $data['code'].' '.$data['tel'],
-                    'birthday' => $birthday,
-                    'departement' => $data['dep'],
-                    'city' => $data['ville'],
-                    'country' => $data['pays'],
-                    'address' => $data['adresse'],
-                    'profession' => $data['prof'],
-                    'revenu' => $data['revenu'],
-                    'piece_type' => $data['piece_type'],
-                    'piece_id' => $data['numpiece'],
-                    'piece_file' => $url_piece,
-                    'type' => 'Personalisé',
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
-
-
-                CartePerso::create([
-                        'id' => Uuid::uuid4()->toString(),
-                    'kyc_client_id' => $kyc->id,
-                    'last' => $responseBody->registrationLast4Digits,
-                    'code' => $responseBody->registrationAccountId,
-                    'deleted' => 0,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
-
-                $message = 'Votre carte est disponible. Les 4 derniers chiffre de votre carte sont : '.$responseBody->registrationLast4Digits.'. et son CustomerID est : '.$responseBody->registrationAccountId;
-                $arr = ['messages'=> $message,'objet'=>'Activation de la carte','from'=>'noreply-bcv@bestcash.me'];
-                Mail::to([$kyc->email,])->send(new MailAlerte($arr));
-            }
-            
-            return back()->withSuccess('Vente effectuée avec succes');
-        } catch (\Exception $e) {
-            return back()->withError($e->getMessage());
-        }
-    }
-
-    public function checkUploadedFileProperties($extension, $fileSize){
-        $valid_extension = array("csv", "xlsx", "xls"); //Only want csv and excel files
-        $maxFileSize = 2097152; // Uploaded file size limit is 2mb
-        if (in_array(strtolower($extension), $valid_extension)) {
-            if ($fileSize <= $maxFileSize) {
-            } else {
-                throw new \Exception('No file was uploaded', Response::HTTP_REQUEST_ENTITY_TOO_LARGE); //413 error
-            }
-        } else {
-            throw new \Exception('Invalid file extension', Response::HTTP_UNSUPPORTED_MEDIA_TYPE); //415 error
         }
     }
     
